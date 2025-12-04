@@ -1,0 +1,18 @@
+{
+  "template": "https://github.com/carlovoSBP/paleofuturistic_python",
+  "commit": "92ed4f7182ff0b32595ce81e98589786ab786b3c",
+  "checkout": null,
+  "context": {
+    "cookiecutter": {
+      "project_name": "sechubman",
+      "project_slug": "sechubman",
+      "project_description": "Development flow as Paleofuturistic Python",
+      "full_name": "Paleofuturistic Python",
+      "email": "me@here.now",
+      "python_version": "3.12",
+      "_template": "https://github.com/carlovoSBP/paleofuturistic_python",
+      "_commit": "92ed4f7182ff0b32595ce81e98589786ab786b3c"
+    }
+  },
+  "directory": null
+}
