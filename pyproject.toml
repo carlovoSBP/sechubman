@@ -32,23 +32,44 @@ dev = [
 requires = ["uv_build>=0.8.15,<0.10.0"]
 build-backend = "uv_build"
 
-[tool.ruff.lint]
-select = [
-    # pycodestyle
-    "E",
-    # Pyflakes
-    "F",
-    # pyupgrade
-    "UP",
-    # flake8-bugbear
-    "B",
-    # flake8-simplify
-    "SIM",
-    # isort
-    "I",
+[tool.ruff]
+# Exclude a variety of commonly ignored directories.
+exclude = [
+    ".bzr",
+    ".direnv",
+    ".eggs",
+    ".git",
+    ".git-rewrite",
+    ".hg",
+    ".ipynb_checkpoints",
+    ".mypy_cache",
+    ".nox",
+    ".pants.d",
+    ".pyenv",
+    ".pytest_cache",
+    ".pytype",
+    ".ruff_cache",
+    ".svn",
+    ".tox",
+    ".venv",
+    ".vscode",
+    "__pypackages__",
+    "_build",
+    "buck-out",
+    "build",
+    "dist",
+    "node_modules",
+    "site-packages",
+    "venv",
+    "scratch",
 ]
+
+[tool.ruff.lint]
+select = ["ALL"]
 # Recommended ignore list for preventing clashes between ruff lint and ruff format.
 ignore = [
+    # missing-trailing-comma
+    "COM812",
     # indentation-with-invalid-multiple
     "E111",
     # indentation-with-invalid-multiple-comment
@@ -56,6 +77,19 @@ ignore = [
     # over-indented
     "E117",
 ]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = [
+    # flake8-annotations
+    "ANN",
+    # pydocstyle
+    "D",
+    # flake8-pytest-style
+    "PT",
+]
+
+[tool.ruff.lint.pydocstyle]
+convention = "numpy"
 
 [tool.mypy]
 files = ["src/"]

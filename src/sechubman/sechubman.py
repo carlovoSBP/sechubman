@@ -1,3 +1,6 @@
+"""The main module of sechubman."""
+
+
 def hello(someone: str = "you") -> str:
     """Greet someone.
 
