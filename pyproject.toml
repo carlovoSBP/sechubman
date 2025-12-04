@@ -32,6 +32,9 @@ dev = [
 requires = ["uv_build>=0.8.15,<0.10.0"]
 build-backend = "uv_build"
 
+[tool.uv]
+exclude-newer = "2025-12-04T01:01:01Z"
+
 [tool.ruff]
 # Exclude a variety of commonly ignored directories.
 exclude = [
