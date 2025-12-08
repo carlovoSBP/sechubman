@@ -1,7 +1,7 @@
 """The main package of sechubman."""
 
-from .sechubman import hello
+from .sechubman import validate_filters
 
 __all__ = [
-    "hello",
+    "validate_filters",
 ]

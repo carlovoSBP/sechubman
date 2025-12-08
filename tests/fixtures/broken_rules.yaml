@@ -1,0 +1,9 @@
+Rules:
+- Filters:
+    AwsAcrowntId:
+    - Value: '123456789012'
+      Comparison: EQUALS
+  Updates:
+    Workflow:
+      Statuzzz: SUPPRESSED
+    Note: 'Dev account'

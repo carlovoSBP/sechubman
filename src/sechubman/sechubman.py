@@ -1,17 +1,42 @@
 """The main module of sechubman."""
 
+import logging
 
-def hello(someone: str = "you") -> str:
-    """Greet someone.
+import botocore.session
+from botocore.exceptions import ParamValidationError
+from botocore.stub import Stubber
+
+LOGGER = logging.getLogger(__name__)
+
+
+def validate_filters(filters: dict) -> bool:
+    """Validate AWS Security Hub filters to get findings.
 
     Parameters
     ----------
-    someone : str, default='you'
-        The name of the person to greet, by default 'you'
+    filters : dict
+        The filters to validate
 
     Returns
     -------
-    str
-        A greeting message
+    bool
+        True if the filters are valid, False otherwise
     """
-    return f"Hello {someone} from sechubman!"
+    securityhub = botocore.session.get_session().create_client("securityhub")
+    stubber = Stubber(securityhub)
+
+    stubber.add_response("get_findings", {"Findings": []}, {"Filters": filters})
+    stubber.activate()
+
+    valid = False
+
+    try:
+        securityhub.get_findings(Filters=filters)
+    except ParamValidationError as e:
+        LOGGER.warning("Validation error: %s", e)
+    else:
+        valid = True
+    finally:
+        stubber.deactivate()
+
+    return valid
