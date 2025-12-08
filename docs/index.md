@@ -7,3 +7,5 @@ See [their documentation](https://boto3.amazonaws.com/v1/documentation/api/lates
 ## Public Functions
 
 ::: sechubman.validate_filters
+
+::: sechubman.validate_updates

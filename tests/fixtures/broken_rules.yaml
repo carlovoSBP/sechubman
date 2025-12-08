@@ -3,7 +3,7 @@ Rules:
     AwsAcrowntId:
     - Value: '123456789012'
       Comparison: EQUALS
-  Updates:
+  UpdatesToFilteredFindings:
     Workflow:
-      Statuzzz: SUPPRESSED
+      Status: SUPPRESSED
     Note: 'Dev account'

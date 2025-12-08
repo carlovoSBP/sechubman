@@ -40,3 +40,40 @@ def validate_filters(filters: dict) -> bool:
         stubber.deactivate()
 
     return valid
+
+
+def validate_updates(updates: dict) -> bool:
+    """Validate AWS Security Hub updates to findings.
+
+    Parameters
+    ----------
+    updates : dict
+        The updates to make to a (set of) findings
+
+    Returns
+    -------
+    bool
+        True if the updates are valid, False otherwise
+    """
+    securityhub = botocore.session.get_session().create_client("securityhub")
+    stubber = Stubber(securityhub)
+
+    stubber.add_response(
+        "batch_update_findings",
+        {"ProcessedFindings": [], "UnprocessedFindings": []},
+        updates,
+    )
+    stubber.activate()
+
+    valid = False
+
+    try:
+        securityhub.batch_update_findings(**updates)
+    except ParamValidationError as e:
+        LOGGER.warning("Validation error: %s", e)
+    else:
+        valid = True
+    finally:
+        stubber.deactivate()
+
+    return valid

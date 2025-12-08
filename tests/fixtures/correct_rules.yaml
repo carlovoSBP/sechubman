@@ -3,7 +3,9 @@ Rules:
     AwsAccountId:
     - Value: '123456789012'
       Comparison: EQUALS
-  Updates:
+  UpdatesToFilteredFindings:
     Workflow:
       Status: SUPPRESSED
-    Note: 'Dev account'
+    Note:
+      Text: 'Dev account'
+      UpdatedBy : 'sechubman'

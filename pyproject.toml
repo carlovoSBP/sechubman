@@ -82,6 +82,8 @@ ignore = [
     "E114",
     # over-indented
     "E117",
+    # line-too-long
+    "E501",
 ]
 
 [tool.ruff.lint.per-file-ignores]
