@@ -7,5 +7,5 @@ Rules:
     Workflow:
       Status: SUPPRESSED
     Note:
-      Text: 'Dev account'
-      UpdatedBy : 'sechubman'
+      Text: Dev account
+      UpdatedBy : sechubman

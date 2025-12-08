@@ -1,8 +1,9 @@
 """The main package of sechubman."""
 
-from .sechubman import validate_filters, validate_updates
+from .sechubman import Rule, validate_filters, validate_updates
 
 __all__ = [
+    "Rule",
     "validate_filters",
     "validate_updates",
 ]

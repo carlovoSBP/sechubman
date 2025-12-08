@@ -4,9 +4,15 @@ from unittest import TestCase
 
 import yaml
 
-from sechubman import validate_filters, validate_updates
+from sechubman import Rule, validate_filters, validate_updates
 
 os.environ["AWS_DEFAULT_REGION"] = "eu-west-1"
+
+
+with Path("tests/fixtures/correct_rules.yaml").open() as file:
+    CORRECT_RULES = yaml.safe_load(file)["Rules"]
+with Path("tests/fixtures/broken_rules.yaml").open() as file:
+    BROKEN_RULES = yaml.safe_load(file)["Rules"]
 
 
 class TestSmoke(TestCase):
@@ -16,32 +22,37 @@ class TestSmoke(TestCase):
 
 class TestValidateFilters(TestCase):
     def test_valid_filters(self):
-        with Path("tests/fixtures/correct_rules.yaml").open() as file:
-            rules = yaml.safe_load(file)
-        self.assertTrue(validate_filters(rules["Rules"][0]["Filters"]))
+        self.assertTrue(validate_filters(CORRECT_RULES[0]["Filters"]))
 
     def test_invalid_filters(self):
-        with Path("tests/fixtures/broken_rules.yaml").open() as file:
-            rules = yaml.safe_load(file)
-        self.assertFalse(validate_filters(rules["Rules"][0]["Filters"]))
+        self.assertFalse(validate_filters(BROKEN_RULES[0]["Filters"]))
 
 
 class TestValidateUpdates(TestCase):
     def test_valid_updates(self):
-        with Path("tests/fixtures/correct_rules.yaml").open() as file:
-            rules = yaml.safe_load(file)
-        first_rule_updates = rules["Rules"][0]["UpdatesToFilteredFindings"]
+        first_rule_updates = CORRECT_RULES[0]["UpdatesToFilteredFindings"]
         first_rule_updates["FindingIdentifiers"] = [
             {
-                "Id": "arn:aws:securityhub:eu-west-1:123456789012:subscription/aws-foundational-security-best-practices/v/1.0.0/EC2.1/finding/abcd1234-5678-90ab-cdef-EXAMPLE11111",
-                "ProductArn": "arn:aws:securityhub:eu-west-1::product/aws/securityhub",
+                "Id": "SomeFindingId",
+                "ProductArn": "SomeProductArn",
             }
         ]
         self.assertTrue(validate_updates(first_rule_updates))
 
     def test_invalid_updates(self):
-        with Path("tests/fixtures/broken_rules.yaml").open() as file:
-            rules = yaml.safe_load(file)
-        self.assertFalse(
-            validate_updates(rules["Rules"][0]["UpdatesToFilteredFindings"])
-        )
+        self.assertFalse(validate_updates(BROKEN_RULES[0]["UpdatesToFilteredFindings"]))
+
+
+class TestRuleDataclass(TestCase):
+    def test_valid_rule(self):
+        rule = Rule(**CORRECT_RULES[0], is_deep_validated=False)
+        rule.validate_deep()
+        self.assertTrue(rule.is_deep_validated)
+
+    def test_invalid_rule_boto3(self):
+        rule = Rule(**BROKEN_RULES[0])
+        self.assertFalse(rule.is_deep_validated)
+
+    def test_invalid_rule_business_logic(self):
+        rule = Rule(**BROKEN_RULES[1])
+        self.assertFalse(rule.is_deep_validated)
