@@ -1,9 +1,12 @@
+import os
 from pathlib import Path
 from unittest import TestCase
 
 import yaml
 
 from sechubman import validate_filters
+
+os.environ["AWS_DEFAULT_REGION"] = "eu-west-1"
 
 
 class TestSmoke(TestCase):
