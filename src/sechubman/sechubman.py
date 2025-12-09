@@ -5,29 +5,36 @@ from dataclasses import dataclass
 
 import boto3
 import botocore.session
+from botocore.client import BaseClient
 from botocore.exceptions import ParamValidationError
 from botocore.stub import Stubber
 
 LOGGER = logging.getLogger(__name__)
 
-SECURITYHUB = boto3.client("securityhub")
 
-
-def validate_filters(filters: dict) -> bool:
+def validate_filters(
+    filters: dict, securityhub_session_client: BaseClient | None = None
+) -> bool:
     """Validate AWS Security Hub filters to get findings.
 
     Parameters
     ----------
     filters : dict
         The filters to validate
+    securityhub_session_client : BaseClient, optional
+        A boto session BaseClient for AWS Security Hub
+        Tries to create one if not provided
 
     Returns
     -------
     bool
         True if the filters are valid, False otherwise
     """
-    securityhub = botocore.session.get_session().create_client("securityhub")
-    stubber = Stubber(securityhub)
+    if not securityhub_session_client:
+        securityhub_session_client = botocore.session.get_session().create_client(
+            "securityhub"
+        )
+    stubber = Stubber(securityhub_session_client)
 
     stubber.add_response("get_findings", {"Findings": []}, {"Filters": filters})
     stubber.activate()
@@ -35,7 +42,7 @@ def validate_filters(filters: dict) -> bool:
     valid = False
 
     try:
-        securityhub.get_findings(Filters=filters)
+        securityhub_session_client.get_findings(Filters=filters)
     except ParamValidationError as e:
         LOGGER.warning("Validation error: %s", e)
     else:
@@ -46,21 +53,29 @@ def validate_filters(filters: dict) -> bool:
     return valid
 
 
-def validate_updates(updates: dict) -> bool:
+def validate_updates(
+    updates: dict, securityhub_session_client: BaseClient | None = None
+) -> bool:
     """Validate AWS Security Hub updates to findings.
 
     Parameters
     ----------
     updates : dict
         The updates to make to a (set of) findings
+    securityhub_session_client : BaseClient, optional
+        A boto session BaseClient for AWS Security Hub
+        Tries to create one if not provided
 
     Returns
     -------
     bool
         True if the updates are valid, False otherwise
     """
-    securityhub = botocore.session.get_session().create_client("securityhub")
-    stubber = Stubber(securityhub)
+    if not securityhub_session_client:
+        securityhub_session_client = botocore.session.get_session().create_client(
+            "securityhub"
+        )
+    stubber = Stubber(securityhub_session_client)
 
     stubber.add_response(
         "batch_update_findings",
@@ -72,7 +87,7 @@ def validate_updates(updates: dict) -> bool:
     valid = False
 
     try:
-        securityhub.batch_update_findings(**updates)
+        securityhub_session_client.batch_update_findings(**updates)
     except ParamValidationError as e:
         LOGGER.warning("Validation error: %s", e)
     else:
@@ -137,9 +152,19 @@ class Rule:
 
         return self.is_deep_validated
 
-    def apply(self) -> None:
-        """Apply the rule in AWS Security Hub."""
-        paginator = SECURITYHUB.get_paginator("get_findings")
+    def apply(self, securityhub_client: BaseClient | None = None) -> None:
+        """Apply the rule in AWS Security Hub.
+
+        Parameters
+        ----------
+        securityhub_client : BaseClient, optional
+            A boto BaseClient for AWS Security Hub
+            Tries to create one if not provided
+        """
+        if not securityhub_client:
+            securityhub_client = boto3.client("securityhub")
+
+        paginator = securityhub_client.get_paginator("get_findings")
         page_iterator = paginator.paginate(
             Filters=self.Filters, PaginationConfig={"MaxItems": 100, "PageSize": 100}
         )
@@ -161,7 +186,7 @@ class Rule:
                 )
                 break
 
-            response = SECURITYHUB.batch_update_findings(**updates)
+            response = securityhub_client.batch_update_findings(**updates)
             processed = response["ProcessedFindings"]
             unprocessed = response["UnprocessedFindings"]
 
