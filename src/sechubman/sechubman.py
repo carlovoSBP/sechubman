@@ -3,11 +3,14 @@
 import logging
 from dataclasses import dataclass
 
+import boto3
 import botocore.session
 from botocore.exceptions import ParamValidationError
 from botocore.stub import Stubber
 
 LOGGER = logging.getLogger(__name__)
+
+SECURITYHUB = boto3.client("securityhub")
 
 
 def validate_filters(filters: dict) -> bool:
@@ -103,7 +106,7 @@ class Rule:
         """
         if "FindingIdentifiers" in self.UpdatesToFilteredFindings:
             LOGGER.warning(
-                "Validation error: 'FindingIdentifiers' should not be directly set in UpdatesToFilteredFindings"
+                "Validation error: 'FindingIdentifiers' should not be directly set in 'UpdatesToFilteredFindings'"
             )
             return False
 
@@ -119,7 +122,8 @@ class Rule:
 
     def validate_deep(self) -> bool:
         """Validate the rule beyond the top-level arguments.
-        Set is_deep_validated to whether the deep rule is valid.
+
+        Also set is_deep_validated to whether the deep rule is valid.
 
         Returns
         -------
@@ -132,3 +136,35 @@ class Rule:
         self.is_deep_validated = filters_valid and updates_valid
 
         return self.is_deep_validated
+
+    def apply(self) -> None:
+        """Apply the rule in AWS Security Hub."""
+        paginator = SECURITYHUB.get_paginator("get_findings")
+        page_iterator = paginator.paginate(
+            Filters=self.Filters, PaginationConfig={"MaxItems": 100, "PageSize": 100}
+        )
+
+        updates = self.UpdatesToFilteredFindings.copy()
+
+        for page in page_iterator:
+            updates["FindingIdentifiers"] = [
+                {
+                    "Id": finding["Id"],
+                    "ProductArn": finding["ProductArn"],
+                }
+                for finding in page["Findings"]
+            ]
+
+            if not updates["FindingIdentifiers"]:
+                LOGGER.info(
+                    "No (more) findings matched the filters; nothing to update."
+                )
+                break
+
+            response = SECURITYHUB.batch_update_findings(**updates)
+            processed = response["ProcessedFindings"]
+            unprocessed = response["UnprocessedFindings"]
+
+            LOGGER.info("Number of processed findings: %d", len(processed))
+            if unprocessed:
+                LOGGER.warning("Number of unprocessed findings: %d", len(unprocessed))

@@ -10,6 +10,7 @@ theme:
 
 nav:
   - Home: index.md
+  - Glossary: glossary.md
 
 watch:
   - src
