@@ -1,18 +1,30 @@
+import json
 import os
 from pathlib import Path
 from unittest import TestCase
 
+import botocore.session
 import yaml
+from botocore.stub import Stubber
 
 from sechubman import Rule, validate_filters, validate_updates
 
 os.environ["AWS_DEFAULT_REGION"] = "eu-west-1"
 
 
-with Path("tests/fixtures/correct_rules.yaml").open() as file:
+with Path("tests/fixtures/rules/correct_rules.yaml").open() as file:
     CORRECT_RULES = yaml.safe_load(file)["Rules"]
-with Path("tests/fixtures/broken_rules.yaml").open() as file:
+with Path("tests/fixtures/rules/broken_rules.yaml").open() as file:
     BROKEN_RULES = yaml.safe_load(file)["Rules"]
+
+with Path("tests/fixtures/boto3/filters.json").open() as file:
+    FILTERS = json.load(file)
+with Path("tests/fixtures/boto3/findings_trimmed.json").open() as file:
+    FINDINGS = json.load(file)
+with Path("tests/fixtures/boto3/updates.json").open() as file:
+    UPDATES = json.load(file)
+with Path("tests/fixtures/boto3/processed.json").open() as file:
+    PROCESSED = json.load(file)
 
 
 class TestSmoke(TestCase):
@@ -56,3 +68,19 @@ class TestRuleDataclass(TestCase):
     def test_invalid_rule_business_logic(self):
         rule = Rule(**BROKEN_RULES[1])
         self.assertFalse(rule.is_deep_validated)
+
+    def test_apply(self):
+        securityhub_session_client = botocore.session.get_session().create_client(
+            "securityhub"
+        )
+        stubber = Stubber(securityhub_session_client)
+
+        stubber.add_response("get_findings", FINDINGS, FILTERS)
+        stubber.add_response("batch_update_findings", PROCESSED, UPDATES)
+
+        stubber.activate()
+
+        rule = Rule(**CORRECT_RULES[0], is_deep_validated=False)
+        rule.apply(securityhub_session_client)
+
+        stubber.deactivate()

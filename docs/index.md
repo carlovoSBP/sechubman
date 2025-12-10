@@ -10,7 +10,7 @@ See [their documentation](https://boto3.amazonaws.com/v1/documentation/api/lates
 Rules:
 - Filters:
     ResourceId:
-    - Value: arn:aws:s3:::test-security
+    - Value: arn:aws:s3:::test-sechubman
       Comparison: EQUALS
     WorkflowStatus:
     - Value: NEW

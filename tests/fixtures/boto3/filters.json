@@ -1,0 +1,17 @@
+{
+    "Filters": {
+        "ResourceId": [
+            {
+                "Value": "arn:aws:s3:::test-sechubman",
+                "Comparison": "EQUALS"
+            }
+        ],
+        "WorkflowStatus": [
+            {
+                "Value": "NEW",
+                "Comparison": "EQUALS"
+            }
+        ]
+    },
+    "MaxResults": 100
+}

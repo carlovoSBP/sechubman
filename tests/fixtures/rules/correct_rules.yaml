@@ -1,11 +1,14 @@
 Rules:
 - Filters:
-    AwsAccountId:
-    - Value: '123456789012'
+    ResourceId:
+    - Value: arn:aws:s3:::test-sechubman
+      Comparison: EQUALS
+    WorkflowStatus:
+    - Value: NEW
       Comparison: EQUALS
   UpdatesToFilteredFindings:
     Workflow:
       Status: SUPPRESSED
     Note:
-      Text: Dev account
+      Text: Test
       UpdatedBy: sechubman
