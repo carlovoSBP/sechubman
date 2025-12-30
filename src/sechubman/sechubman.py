@@ -3,7 +3,6 @@
 import logging
 from dataclasses import dataclass
 
-import boto3
 import botocore.session
 from botocore.client import BaseClient
 from botocore.exceptions import ParamValidationError
@@ -104,24 +103,19 @@ class Rule:
 
     Filters: dict
     UpdatesToFilteredFindings: dict
-    is_deep_validated: bool = True
-
-    def __post_init__(self) -> None:
-        """Perform deep validation after initialization if required."""
-        if self.is_deep_validated:
-            self.validate_deep()
+    boto3_security_hub_client: BaseClient
 
     def _validate_updates_to_filtered_findings(self) -> bool:
-        """Validate the UpdatesToFilteredFindings argument.
+        """Validate the updates_to_filtered_findings argument.
 
         Returns
         -------
         bool
-            True if the UpdatesToFilteredFindings argument is valid, False otherwise
+            True if the updates_to_filtered_findings argument is valid, False otherwise
         """
         if "FindingIdentifiers" in self.UpdatesToFilteredFindings:
             LOGGER.warning(
-                "Validation error: 'FindingIdentifiers' should not be directly set in 'UpdatesToFilteredFindings'"
+                "Validation error: 'FindingIdentifiers' should not be directly set in 'updates_to_filtered_findings'"
             )
             return False
 
@@ -133,38 +127,24 @@ class Rule:
             }
         ]
 
-        return validate_updates(updates_copy)
+        return validate_updates(updates_copy, self.boto3_security_hub_client)
 
     def validate_deep(self) -> bool:
         """Validate the rule beyond the top-level arguments.
-
-        Also set is_deep_validated to whether the deep rule is valid.
 
         Returns
         -------
         bool
             True if the rule is valid beyond the top-level arguments, False otherwise
         """
-        filters_valid = validate_filters(self.Filters)
+        filters_valid = validate_filters(self.Filters, self.boto3_security_hub_client)
         updates_valid = self._validate_updates_to_filtered_findings()
 
-        self.is_deep_validated = filters_valid and updates_valid
+        return filters_valid and updates_valid
 
-        return self.is_deep_validated
-
-    def apply(self, securityhub_client: BaseClient | None = None) -> None:
-        """Apply the rule in AWS Security Hub.
-
-        Parameters
-        ----------
-        securityhub_client : BaseClient, optional
-            A boto BaseClient for AWS Security Hub
-            Tries to create one if not provided
-        """
-        if not securityhub_client:
-            securityhub_client = boto3.client("securityhub")
-
-        paginator = securityhub_client.get_paginator("get_findings")
+    def apply(self) -> None:
+        """Apply the rule in AWS Security Hub."""
+        paginator = self.boto3_security_hub_client.get_paginator("get_findings")
         page_iterator = paginator.paginate(
             Filters=self.Filters, PaginationConfig={"MaxItems": 100, "PageSize": 100}
         )
@@ -186,7 +166,7 @@ class Rule:
                 )
                 break
 
-            response = securityhub_client.batch_update_findings(**updates)
+            response = self.boto3_security_hub_client.batch_update_findings(**updates)
             processed = response["ProcessedFindings"]
             unprocessed = response["UnprocessedFindings"]
 

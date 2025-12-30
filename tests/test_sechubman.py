@@ -10,6 +10,10 @@ from botocore.stub import Stubber
 from sechubman import Rule, validate_filters, validate_updates
 
 os.environ["AWS_DEFAULT_REGION"] = "eu-west-1"
+# Not strictly needed, but speeds up boto3 client creation
+os.environ["AWS_ACCESS_KEY_ID"] = "ASIA000AAA"
+os.environ["AWS_SECRET_ACCESS_KEY"] = "abc123"  # noqa: S105
+os.environ["AWS_SESSION_TOKEN"] = "abc123token"  # noqa: S105
 
 
 with Path("tests/fixtures/rules/correct_rules.yaml").open() as file:
@@ -25,6 +29,8 @@ with Path("tests/fixtures/boto3/updates.json").open() as file:
     UPDATES = json.load(file)
 with Path("tests/fixtures/boto3/processed.json").open() as file:
     PROCESSED = json.load(file)
+
+SECURITYHUB_SESSION_CLIENT = botocore.session.get_session().create_client("securityhub")
 
 
 class TestSmoke(TestCase):
@@ -57,30 +63,34 @@ class TestValidateUpdates(TestCase):
 
 class TestRuleDataclass(TestCase):
     def test_valid_rule(self):
-        rule = Rule(**CORRECT_RULES[0], is_deep_validated=False)
-        rule.validate_deep()
-        self.assertTrue(rule.is_deep_validated)
+        rule = Rule(
+            **CORRECT_RULES[0], boto3_security_hub_client=SECURITYHUB_SESSION_CLIENT
+        )
+        self.assertTrue(rule.validate_deep())
 
     def test_invalid_rule_boto3(self):
-        rule = Rule(**BROKEN_RULES[0])
-        self.assertFalse(rule.is_deep_validated)
+        rule = Rule(
+            **BROKEN_RULES[0], boto3_security_hub_client=SECURITYHUB_SESSION_CLIENT
+        )
+        self.assertFalse(rule.validate_deep())
 
     def test_invalid_rule_business_logic(self):
-        rule = Rule(**BROKEN_RULES[1])
-        self.assertFalse(rule.is_deep_validated)
+        rule = Rule(
+            **BROKEN_RULES[1], boto3_security_hub_client=SECURITYHUB_SESSION_CLIENT
+        )
+        self.assertFalse(rule.validate_deep())
 
     def test_apply(self):
-        securityhub_session_client = botocore.session.get_session().create_client(
-            "securityhub"
-        )
-        stubber = Stubber(securityhub_session_client)
+        stubber = Stubber(SECURITYHUB_SESSION_CLIENT)
 
         stubber.add_response("get_findings", FINDINGS, FILTERS)
         stubber.add_response("batch_update_findings", PROCESSED, UPDATES)
 
         stubber.activate()
 
-        rule = Rule(**CORRECT_RULES[0], is_deep_validated=False)
-        rule.apply(securityhub_session_client)
+        rule = Rule(
+            **CORRECT_RULES[0], boto3_security_hub_client=SECURITYHUB_SESSION_CLIENT
+        )
+        rule.apply()
 
         stubber.deactivate()
