@@ -1,6 +1,6 @@
 {
   "template": "https://github.com/carlovoSBP/paleofuturistic_python",
-  "commit": "92ed4f7182ff0b32595ce81e98589786ab786b3c",
+  "commit": "16b72ae073597208b3520e1d18f82954481bbd9b",
   "checkout": null,
   "context": {
     "cookiecutter": {
@@ -10,8 +10,9 @@
       "full_name": "Paleofuturistic Python",
       "email": "me@here.now",
       "python_version": "3.12",
+      "include_apache_license": true,
       "_template": "https://github.com/carlovoSBP/paleofuturistic_python",
-      "_commit": "92ed4f7182ff0b32595ce81e98589786ab786b3c"
+      "_commit": "16b72ae073597208b3520e1d18f82954481bbd9b"
     }
   },
   "directory": null

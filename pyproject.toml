@@ -13,7 +13,6 @@ dependencies = [
 classifiers = [
     # License
     "License :: OSI Approved :: Apache Software License",
-
     # Python versions supported by the package
     "Programming Language :: Python :: 3.12",
 ]
