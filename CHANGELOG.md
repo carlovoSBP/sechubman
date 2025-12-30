@@ -1,5 +1,16 @@
 # Changelog
 
+## [1.0.0](https://github.com/carlovoSBP/sechubman/compare/v0.2.0...v1.0.0) (2025-12-30)
+
+
+### ⚠ BREAKING CHANGES
+
+* expect a boto3 client at rule creation
+
+### Features
+
+* expect a boto3 client at rule creation ([2217bbb](https://github.com/carlovoSBP/sechubman/commit/2217bbbd33ce785937dfccc0210c9b569f80088b))
+
 ## [0.2.0](https://github.com/carlovoSBP/sechubman/compare/v0.1.0...v0.2.0) (2025-12-09)
 
 
