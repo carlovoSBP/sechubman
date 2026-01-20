@@ -5,12 +5,17 @@ from unittest import TestCase
 
 import botocore.session
 import yaml
-from botocore.stub import Stubber
 
-from sechubman import Rule, validate_filters, validate_updates
+from sechubman import (
+    BotoStubCall,
+    Rule,
+    stub_boto_client,
+    validate_filters,
+    validate_updates,
+)
 
 os.environ["AWS_DEFAULT_REGION"] = "eu-west-1"
-# Not strictly needed, but speeds up boto3 client creation
+# Not strictly needed, but speeds up boto client creation
 os.environ["AWS_ACCESS_KEY_ID"] = "ASIA000AAA"
 os.environ["AWS_SECRET_ACCESS_KEY"] = "abc123"  # noqa: S105
 os.environ["AWS_SESSION_TOKEN"] = "abc123token"  # noqa: S105
@@ -21,15 +26,15 @@ with Path("tests/fixtures/rules/correct_rules.yaml").open() as file:
 with Path("tests/fixtures/rules/broken_rules.yaml").open() as file:
     BROKEN_RULES = yaml.safe_load(file)["Rules"]
 
-with Path("tests/fixtures/boto3/filters.json").open() as file:
+with Path("tests/fixtures/boto/filters.json").open() as file:
     FILTERS = json.load(file)
-with Path("tests/fixtures/boto3/findings_trimmed.json").open() as file:
+with Path("tests/fixtures/boto/findings_trimmed.json").open() as file:
     FINDINGS = json.load(file)
-with Path("tests/fixtures/boto3/updates.json").open() as file:
+with Path("tests/fixtures/boto/updates.json").open() as file:
     UPDATES = json.load(file)
-with Path("tests/fixtures/boto3/processed.json").open() as file:
+with Path("tests/fixtures/boto/processed.json").open() as file:
     PROCESSED = json.load(file)
-with Path("tests/fixtures/boto3/unprocessed.json").open() as file:
+with Path("tests/fixtures/boto/unprocessed.json").open() as file:
     UNPROCESSED = json.load(file)
 
 SECURITYHUB_SESSION_CLIENT = botocore.session.get_session().create_client("securityhub")
@@ -66,47 +71,44 @@ class TestValidateUpdates(TestCase):
 class TestRuleDataclass(TestCase):
     def test_valid_rule(self):
         rule = Rule(
-            **CORRECT_RULES[0], boto3_security_hub_client=SECURITYHUB_SESSION_CLIENT
+            **CORRECT_RULES[0], boto_securityhub_client=SECURITYHUB_SESSION_CLIENT
         )
         self.assertTrue(rule.validate_deep())
 
-    def test_invalid_rule_boto3(self):
+    def test_invalid_rule_boto(self):
         rule = Rule(
-            **BROKEN_RULES[0], boto3_security_hub_client=SECURITYHUB_SESSION_CLIENT
+            **BROKEN_RULES[0], boto_securityhub_client=SECURITYHUB_SESSION_CLIENT
         )
         self.assertFalse(rule.validate_deep())
 
     def test_invalid_rule_business_logic(self):
         rule = Rule(
-            **BROKEN_RULES[1], boto3_security_hub_client=SECURITYHUB_SESSION_CLIENT
+            **BROKEN_RULES[1], boto_securityhub_client=SECURITYHUB_SESSION_CLIENT
         )
         self.assertFalse(rule.validate_deep())
 
     def test_apply(self):
-        stubber = Stubber(SECURITYHUB_SESSION_CLIENT)
-
-        stubber.add_response("get_findings", FINDINGS, FILTERS)
-        stubber.add_response("batch_update_findings", PROCESSED, UPDATES)
-
-        stubber.activate()
-
-        rule = Rule(
-            **CORRECT_RULES[0], boto3_security_hub_client=SECURITYHUB_SESSION_CLIENT
-        )
-        self.assertTrue(rule.apply())
-
-        stubber.deactivate()
+        with stub_boto_client(
+            SECURITYHUB_SESSION_CLIENT,
+            [
+                BotoStubCall("get_findings", FINDINGS, FILTERS),
+                BotoStubCall("batch_update_findings", PROCESSED, UPDATES),
+            ],
+        ):
+            rule = Rule(
+                **CORRECT_RULES[0], boto_securityhub_client=SECURITYHUB_SESSION_CLIENT
+            )
+            self.assertTrue(rule.apply())
 
     def test_apply_unprocessed(self):
-        stubber = Stubber(SECURITYHUB_SESSION_CLIENT)
-
-        stubber.add_response("get_findings", FINDINGS, FILTERS)
-        stubber.add_response("batch_update_findings", UNPROCESSED, UPDATES)
-        stubber.activate()
-
-        rule = Rule(
-            **CORRECT_RULES[0], boto3_security_hub_client=SECURITYHUB_SESSION_CLIENT
-        )
-        self.assertFalse(rule.apply())
-
-        stubber.deactivate()
+        with stub_boto_client(
+            SECURITYHUB_SESSION_CLIENT,
+            [
+                BotoStubCall("get_findings", FINDINGS, FILTERS),
+                BotoStubCall("batch_update_findings", UNPROCESSED, UPDATES),
+            ],
+        ):
+            rule = Rule(
+                **CORRECT_RULES[0], boto_securityhub_client=SECURITYHUB_SESSION_CLIENT
+            )
+            self.assertFalse(rule.apply())

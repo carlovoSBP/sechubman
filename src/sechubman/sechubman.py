@@ -5,23 +5,35 @@ from dataclasses import dataclass
 
 import botocore.session
 from botocore.client import BaseClient
-from botocore.exceptions import ParamValidationError
-from botocore.stub import Stubber
+
+from .utils import BotoStubCall, validate_boto_call_params
 
 LOGGER = logging.getLogger(__name__)
+
+
+def _validate_securityhub_call_params(
+    boto_stub_responses: list[BotoStubCall],
+    securityhub_session_client: BaseClient | None = None,
+) -> bool:
+    if not securityhub_session_client:
+        securityhub_session_client = botocore.session.get_session().create_client(
+            "securityhub"
+        )
+
+    return validate_boto_call_params(boto_stub_responses, securityhub_session_client)
 
 
 def validate_filters(
     filters: dict, securityhub_session_client: BaseClient | None = None
 ) -> bool:
-    """Validate AWS Security Hub filters to get findings.
+    """Validate AWS SecurityHub filters to get findings.
 
     Parameters
     ----------
     filters : dict
         The filters to validate
     securityhub_session_client : BaseClient, optional
-        A boto session BaseClient for AWS Security Hub
+        A boto session BaseClient for AWS SecurityHub
         Tries to create one if not provided
 
     Returns
@@ -29,40 +41,29 @@ def validate_filters(
     bool
         True if the filters are valid, False otherwise
     """
-    if not securityhub_session_client:
-        securityhub_session_client = botocore.session.get_session().create_client(
-            "securityhub"
-        )
-    stubber = Stubber(securityhub_session_client)
-
-    stubber.add_response("get_findings", {"Findings": []}, {"Filters": filters})
-    stubber.activate()
-
-    valid = False
-
-    try:
-        securityhub_session_client.get_findings(Filters=filters)
-    except ParamValidationError as e:
-        LOGGER.warning("Validation error: %s", e)
-    else:
-        valid = True
-    finally:
-        stubber.deactivate()
-
-    return valid
+    return _validate_securityhub_call_params(
+        [
+            BotoStubCall(
+                method="get_findings",
+                service_response={"Findings": []},
+                expected_params={"Filters": filters},
+            )
+        ],
+        securityhub_session_client,
+    )
 
 
 def validate_updates(
     updates: dict, securityhub_session_client: BaseClient | None = None
 ) -> bool:
-    """Validate AWS Security Hub updates to findings.
+    """Validate AWS SecurityHub updates to findings.
 
     Parameters
     ----------
     updates : dict
-        The updates to make to a (set of) findings
+        The updates to make to (a set of) findings
     securityhub_session_client : BaseClient, optional
-        A boto session BaseClient for AWS Security Hub
+        A boto session BaseClient for AWS SecurityHub
         Tries to create one if not provided
 
     Returns
@@ -70,40 +71,25 @@ def validate_updates(
     bool
         True if the updates are valid, False otherwise
     """
-    if not securityhub_session_client:
-        securityhub_session_client = botocore.session.get_session().create_client(
-            "securityhub"
-        )
-    stubber = Stubber(securityhub_session_client)
-
-    stubber.add_response(
-        "batch_update_findings",
-        {"ProcessedFindings": [], "UnprocessedFindings": []},
-        updates,
+    return _validate_securityhub_call_params(
+        [
+            BotoStubCall(
+                method="batch_update_findings",
+                service_response={"ProcessedFindings": [], "UnprocessedFindings": []},
+                expected_params=updates,
+            )
+        ],
+        securityhub_session_client,
     )
-    stubber.activate()
-
-    valid = False
-
-    try:
-        securityhub_session_client.batch_update_findings(**updates)
-    except ParamValidationError as e:
-        LOGGER.warning("Validation error: %s", e)
-    else:
-        valid = True
-    finally:
-        stubber.deactivate()
-
-    return valid
 
 
 @dataclass
 class Rule:
-    """Dataclass representing a Security Hub management rule."""
+    """Dataclass representing a SecurityHub management rule."""
 
     Filters: dict
     UpdatesToFilteredFindings: dict
-    boto3_security_hub_client: BaseClient
+    boto_securityhub_client: BaseClient
 
     def _validate_updates_to_filtered_findings(self) -> bool:
         """Validate the updates_to_filtered_findings argument.
@@ -127,7 +113,7 @@ class Rule:
             }
         ]
 
-        return validate_updates(updates_copy, self.boto3_security_hub_client)
+        return validate_updates(updates_copy, self.boto_securityhub_client)
 
     def validate_deep(self) -> bool:
         """Validate the rule beyond the top-level arguments.
@@ -137,20 +123,20 @@ class Rule:
         bool
             True if the rule is valid beyond the top-level arguments, False otherwise
         """
-        filters_valid = validate_filters(self.Filters, self.boto3_security_hub_client)
+        filters_valid = validate_filters(self.Filters, self.boto_securityhub_client)
         updates_valid = self._validate_updates_to_filtered_findings()
 
         return filters_valid and updates_valid
 
     def apply(self) -> bool:
-        """Apply the rule in AWS Security Hub.
+        """Apply the rule in AWS SecurityHub.
 
         Returns
         -------
         bool
             True if all findings were processed successfully, False otherwise
         """
-        paginator = self.boto3_security_hub_client.get_paginator("get_findings")
+        paginator = self.boto_securityhub_client.get_paginator("get_findings")
         page_iterator = paginator.paginate(
             Filters=self.Filters, PaginationConfig={"MaxItems": 100, "PageSize": 100}
         )
@@ -174,7 +160,7 @@ class Rule:
                 )
                 break
 
-            response = self.boto3_security_hub_client.batch_update_findings(**updates)
+            response = self.boto_securityhub_client.batch_update_findings(**updates)
             processed = response["ProcessedFindings"]
             unprocessed = response["UnprocessedFindings"]
 
