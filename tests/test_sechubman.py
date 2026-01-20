@@ -29,6 +29,8 @@ with Path("tests/fixtures/boto3/updates.json").open() as file:
     UPDATES = json.load(file)
 with Path("tests/fixtures/boto3/processed.json").open() as file:
     PROCESSED = json.load(file)
+with Path("tests/fixtures/boto3/unprocessed.json").open() as file:
+    UNPROCESSED = json.load(file)
 
 SECURITYHUB_SESSION_CLIENT = botocore.session.get_session().create_client("securityhub")
 
@@ -91,6 +93,20 @@ class TestRuleDataclass(TestCase):
         rule = Rule(
             **CORRECT_RULES[0], boto3_security_hub_client=SECURITYHUB_SESSION_CLIENT
         )
-        rule.apply()
+        self.assertTrue(rule.apply())
+
+        stubber.deactivate()
+
+    def test_apply_unprocessed(self):
+        stubber = Stubber(SECURITYHUB_SESSION_CLIENT)
+
+        stubber.add_response("get_findings", FINDINGS, FILTERS)
+        stubber.add_response("batch_update_findings", UNPROCESSED, UPDATES)
+        stubber.activate()
+
+        rule = Rule(
+            **CORRECT_RULES[0], boto3_security_hub_client=SECURITYHUB_SESSION_CLIENT
+        )
+        self.assertFalse(rule.apply())
 
         stubber.deactivate()

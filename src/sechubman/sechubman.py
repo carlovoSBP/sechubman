@@ -142,14 +142,22 @@ class Rule:
 
         return filters_valid and updates_valid
 
-    def apply(self) -> None:
-        """Apply the rule in AWS Security Hub."""
+    def apply(self) -> bool:
+        """Apply the rule in AWS Security Hub.
+
+        Returns
+        -------
+        bool
+            True if all findings were processed successfully, False otherwise
+        """
         paginator = self.boto3_security_hub_client.get_paginator("get_findings")
         page_iterator = paginator.paginate(
             Filters=self.Filters, PaginationConfig={"MaxItems": 100, "PageSize": 100}
         )
 
         updates = self.UpdatesToFilteredFindings.copy()
+
+        any_unprocessed = False
 
         for page in page_iterator:
             updates["FindingIdentifiers"] = [
@@ -172,4 +180,7 @@ class Rule:
 
             LOGGER.info("Number of processed findings: %d", len(processed))
             if unprocessed:
+                any_unprocessed = True
                 LOGGER.warning("Number of unprocessed findings: %d", len(unprocessed))
+
+        return not any_unprocessed
