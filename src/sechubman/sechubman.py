@@ -170,3 +170,31 @@ class Rule:
                 LOGGER.warning("Number of unprocessed findings: %d", len(unprocessed))
 
         return not any_unprocessed
+
+    def match(self, finding: dict) -> bool:
+        """Check if a finding matches the rule's filters.
+
+        Parameters
+        ----------
+        finding : dict
+            The finding to check
+
+        Returns
+        -------
+        bool
+            True if the finding matches the rule's filters, False otherwise
+        """
+        for filter_key, filter_comparisons in self.Filters.items():
+            finding_value = finding.get(filter_key)
+            if finding_value is None:
+                return False
+
+            if any(
+                comparison.get("Value") == finding_value
+                for comparison in filter_comparisons
+            ):
+                continue
+
+            return False
+
+        return True
