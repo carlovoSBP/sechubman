@@ -5,6 +5,16 @@ Rules:
       Comparison: EQUALS
     - Value: arn:aws:securityhub:eu-west-1::product/aws/securityhub
       Comparison: EQUALS
+    GeneratorId:
+    - Value: aws-foundational-security-best-practices
+      Comparison: PREFIX
+    - Value: arn:aws:config
+      Comparison: PREFIX
+    Title:
+    - Value: bucket
+      Comparison: CONTAINS
+    - Value: instance
+      Comparison: CONTAINS
   UpdatesToFilteredFindings:
     Workflow:
       Status: SUPPRESSED

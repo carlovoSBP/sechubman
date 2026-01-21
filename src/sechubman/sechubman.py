@@ -184,13 +184,21 @@ class Rule:
         bool
             True if the finding matches the rule's filters, False otherwise
         """
+        comparators = {
+            "EQUALS": lambda a, b: a == b,
+            "PREFIX": lambda a, b: a.startswith(b),
+            "CONTAINS": lambda a, b: b in a,
+        }
+
         for filter_key, filter_comparisons in self.Filters.items():
             finding_value = finding.get(filter_key)
             if finding_value is None:
                 return False
 
             if any(
-                comparison.get("Value") == finding_value
+                comparators[comparison.get("Comparison")](
+                    finding_value, comparison.get("Value")
+                )
                 for comparison in filter_comparisons
             ):
                 continue
