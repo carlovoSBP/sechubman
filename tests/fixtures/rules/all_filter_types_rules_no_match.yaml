@@ -3,6 +3,10 @@ Rules:
     ProductArn:
     - Value: arn:aws:securityhub:eu-west-1::product/aws/config
       Comparison: EQUALS
+    - Value: arn:aws:securityhub:eu-central-1
+      Comparison: PREFIX
+    - Value: cis
+      Comparison: CONTAINS
   UpdatesToFilteredFindings:
     Workflow:
       Status: SUPPRESSED
