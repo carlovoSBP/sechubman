@@ -73,11 +73,22 @@ class TestValidateUpdates(TestCase):
 
 
 class TestRuleDataclass(TestCase):
+    def _test_multiple_valid_rules(self, rules: list[dict]):
+        for rule_dict in rules:
+            with self.subTest(rule=rule_dict):
+                rule = Rule(
+                    **rule_dict, boto_securityhub_client=SECURITYHUB_SESSION_CLIENT
+                )
+                self.assertTrue(rule.validate_deep())
+
     def test_valid_rule(self):
-        rule = Rule(
-            **CORRECT_RULES[0], boto_securityhub_client=SECURITYHUB_SESSION_CLIENT
-        )
-        self.assertTrue(rule.validate_deep())
+        self._test_multiple_valid_rules(CORRECT_RULES)
+
+    def test_all_type_match_rules(self):
+        self._test_multiple_valid_rules(ALL_FILTER_TYPES_MATCH_RULES)
+
+    def test_all_type_no_match_rules(self):
+        self._test_multiple_valid_rules(ALL_FILTER_TYPES_NO_MATCH_RULES)
 
     def test_invalid_rule_boto(self):
         rule = Rule(
