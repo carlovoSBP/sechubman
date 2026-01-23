@@ -1,0 +1,29 @@
+{
+    "ProductArn": "arn:aws:securityhub:eu-west-1::product/aws/securityhub",
+    "Description": "This control checks whether an Amazon S3 general purpose bucket blocks public access at the bucket level. The control fails if any of the following settings are set to false: ignorePublicAcls, blockPublicPolicy, blockPublicAcls, restrictPublicBuckets.",
+    "CreatedAt": "2025-12-09T08:53:43.702Z",
+    "SchemaVersion": "2018-10-08",
+    "GeneratorId": "aws-foundational-security-best-practices/v/1.0.0/S3.8",
+    "Title": "S3.8 S3 general purpose buckets should block public access",
+    "UpdatedAt": "2025-12-09T08:53:43.702Z",
+    "AwsAccountId": "123456789012",
+    "Id": "arn:aws:securityhub:eu-west-1:123456789012:subscription/aws-foundational-security-best-practices/v/1.0.0/S3.8/finding/2f428174-0020-4302-b474-386d400595dd",
+    "Resources": [
+        {
+            "Partition": "aws",
+            "Type": "AwsS3Bucket",
+            "Details": {
+                "AwsS3Bucket": {
+                    "OwnerId": "000verylongstring000",
+                    "CreatedAt": "2025-12-09T08:52:34.000Z",
+                    "Name": "test-sechubman"
+                }
+            },
+            "Region": "eu-west-1",
+            "Id": "arn:aws:s3:::test-sechubman"
+        }
+    ],
+    "Types": [
+        "Software and Configuration Checks/Industry and Regulatory Standards/AWS-Foundational-Security-Best-Practices"
+    ]
+}

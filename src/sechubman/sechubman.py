@@ -7,7 +7,11 @@ import botocore.session
 from botocore.client import BaseClient
 
 from .securityhub import StringFilter, StringFilters
-from .utils import BotoStubCall, validate_boto_call_params
+from .utils import (
+    BotoStubCall,
+    get_finding_values_from_boto_argument,
+    validate_boto_call_params,
+)
 
 LOGGER = logging.getLogger(__name__)
 
@@ -186,11 +190,18 @@ class Rule:
             True if the finding matches the rule's filters, False otherwise
         """
         return all(
-            filter_key in finding
-            and StringFilters(
-                string_filters=[
-                    StringFilter(**comparison) for comparison in filter_comparisons
-                ]
-            ).match(finding[filter_key])
+            (
+                any(
+                    StringFilters(
+                        string_filters=[
+                            StringFilter(**comparison)
+                            for comparison in filter_comparisons
+                        ]
+                    ).match(value)
+                    for value in get_finding_values_from_boto_argument(
+                        finding, filter_key
+                    )
+                )
+            )
             for filter_key, filter_comparisons in self.Filters.items()
         )

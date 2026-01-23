@@ -22,6 +22,9 @@ Rules:
       Comparison: PREFIX_NOT_EQUALS
     - Value: deprecated
       Comparison: NOT_CONTAINS
+    Type:
+    - Value: AWS-Foundational-Security
+      Comparison: CONTAINS
   UpdatesToFilteredFindings:
     Workflow:
       Status: SUPPRESSED

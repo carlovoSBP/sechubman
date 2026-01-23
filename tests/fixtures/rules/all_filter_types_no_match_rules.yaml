@@ -45,3 +45,23 @@ Rules:
     Note:
       Text: Test
       UpdatedBy: sechubman
+- Filters:
+    Region:
+    - Value: missing
+      Comparison: CONTAINS
+  UpdatesToFilteredFindings:
+    Workflow:
+      Status: SUPPRESSED
+    Note:
+      Text: Test
+      UpdatedBy: sechubman
+- Filters:
+    Type:
+    - Value: CIS AWS Foundations-
+      Comparison: CONTAINS
+  UpdatesToFilteredFindings:
+    Workflow:
+      Status: SUPPRESSED
+    Note:
+      Text: Test
+      UpdatedBy: sechubman

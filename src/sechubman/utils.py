@@ -13,6 +13,33 @@ from botocore.stub import Stubber
 LOGGER = logging.getLogger(__name__)
 
 
+def get_finding_values_from_boto_argument(finding: dict, key: str) -> list[str]:
+    """Get the values if a finding for a given boto argument key.
+
+    Some arguments in:
+    https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/securityhub/client/get_findings.html
+    do not directly map to finding fields as per:
+    https://docs.amazonaws.cn/en_us/securityhub/latest/userguide/securityhub-findings-format.html
+    Therefore, this method handles those special cases.
+    The method returns a list of strings to handle both single-value and multi-value fields.
+
+    Parameters
+    ----------
+    finding : dict
+        The finding to get the values from
+    key : str
+        The key to get the values for
+
+    Returns
+    -------
+    list[str]
+        The values from the finding for the given key
+    """
+    if key == "Type":
+        return finding.get("Types", [])
+    return [finding[key]] if key in finding else []
+
+
 @dataclass
 class BotoStubCall:
     """Dataclass representing the inputs needed to stub a boto call."""

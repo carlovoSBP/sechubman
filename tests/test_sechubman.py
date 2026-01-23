@@ -34,6 +34,8 @@ with Path("tests/fixtures/boto/filters.json").open() as file:
     FILTERS = json.load(file)
 with Path("tests/fixtures/boto/findings_trimmed.json").open() as file:
     FINDINGS = json.load(file)
+with Path("tests/fixtures/boto/finding_groomed.json").open() as file:
+    FINDING_GROOMED = json.load(file)
 with Path("tests/fixtures/boto/updates.json").open() as file:
     UPDATES = json.load(file)
 with Path("tests/fixtures/boto/processed.json").open() as file:
@@ -133,7 +135,7 @@ class TestRuleDataclass(TestCase):
             **ALL_FILTER_TYPES_MATCH_RULES[0],
             boto_securityhub_client=SECURITYHUB_SESSION_CLIENT,
         )
-        self.assertTrue(rule.match(FINDINGS["Findings"][0]))
+        self.assertTrue(rule.match(FINDING_GROOMED))
 
     def test_no_match(self):
         for all_filter_type_no_match_rule in ALL_FILTER_TYPES_NO_MATCH_RULES:
@@ -144,4 +146,4 @@ class TestRuleDataclass(TestCase):
                     **all_filter_type_no_match_rule,
                     boto_securityhub_client=SECURITYHUB_SESSION_CLIENT,
                 )
-                self.assertFalse(rule.match(FINDINGS["Findings"][0]))
+                self.assertFalse(rule.match(FINDING_GROOMED))

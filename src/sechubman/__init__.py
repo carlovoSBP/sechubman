@@ -2,7 +2,12 @@
 
 from .sechubman import Rule, validate_filters, validate_updates
 from .securityhub import StringComparisons, StringFilter, StringFilters
-from .utils import BotoStubCall, stub_boto_client, validate_boto_call_params
+from .utils import (
+    BotoStubCall,
+    get_finding_values_from_boto_argument,
+    stub_boto_client,
+    validate_boto_call_params,
+)
 
 __all__ = [
     "BotoStubCall",
@@ -10,6 +15,7 @@ __all__ = [
     "StringComparisons",
     "StringFilter",
     "StringFilters",
+    "get_finding_values_from_boto_argument",
     "stub_boto_client",
     "validate_boto_call_params",
     "validate_filters",
