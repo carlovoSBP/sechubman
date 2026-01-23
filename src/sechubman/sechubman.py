@@ -6,6 +6,7 @@ from dataclasses import dataclass
 import botocore.session
 from botocore.client import BaseClient
 
+from .securityhub import StringFilter, StringFilters
 from .utils import BotoStubCall, validate_boto_call_params
 
 LOGGER = logging.getLogger(__name__)
@@ -184,25 +185,12 @@ class Rule:
         bool
             True if the finding matches the rule's filters, False otherwise
         """
-        comparators = {
-            "EQUALS": lambda a, b: a == b,
-            "PREFIX": lambda a, b: a.startswith(b),
-            "CONTAINS": lambda a, b: b in a,
-        }
-
-        for filter_key, filter_comparisons in self.Filters.items():
-            finding_value = finding.get(filter_key)
-            if finding_value is None:
-                return False
-
-            if any(
-                comparators[comparison.get("Comparison")](
-                    finding_value, comparison.get("Value")
-                )
-                for comparison in filter_comparisons
-            ):
-                continue
-
-            return False
-
-        return True
+        return all(
+            filter_key in finding
+            and StringFilters(
+                string_filters=[
+                    StringFilter(**comparison) for comparison in filter_comparisons
+                ]
+            ).match(finding[filter_key])
+            for filter_key, filter_comparisons in self.Filters.items()
+        )

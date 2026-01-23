@@ -15,6 +15,13 @@ Rules:
       Comparison: CONTAINS
     - Value: instance
       Comparison: CONTAINS
+    Description:
+    - Value: experimental
+      Comparison: NOT_EQUALS
+    - Value: CIS
+      Comparison: PREFIX_NOT_EQUALS
+    - Value: deprecated
+      Comparison: NOT_CONTAINS
   UpdatesToFilteredFindings:
     Workflow:
       Status: SUPPRESSED

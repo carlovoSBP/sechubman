@@ -1,0 +1,47 @@
+Rules:
+- Filters:
+    ProductArn:
+    - Value: arn:aws:securityhub:eu-west-1::product/aws/config
+      Comparison: EQUALS
+    - Value: arn:aws:securityhub:eu-central-1
+      Comparison: PREFIX
+    - Value: CIS
+      Comparison: CONTAINS
+  UpdatesToFilteredFindings:
+    Workflow:
+      Status: SUPPRESSED
+    Note:
+      Text: Test
+      UpdatedBy: sechubman
+- Filters:
+    GeneratorId:
+    - Value: aws-foundational-security-best-practices/v/1.0.0/S3.8
+      Comparison: NOT_EQUALS
+  UpdatesToFilteredFindings:
+    Workflow:
+      Status: SUPPRESSED
+    Note:
+      Text: Test
+      UpdatedBy: sechubman
+- Filters:
+    Title:
+    - Value: S3.8
+      Comparison: PREFIX_NOT_EQUALS
+  UpdatesToFilteredFindings:
+    Workflow:
+      Status: SUPPRESSED
+    Note:
+      Text: Test
+      UpdatedBy: sechubman
+- Filters:
+    Description:
+    - Value: instance
+      Comparison: NOT_CONTAINS
+    - Value: bucket
+      Comparison: NOT_CONTAINS
+  UpdatesToFilteredFindings:
+    Workflow:
+      Status: SUPPRESSED
+    Note:
+      Text: Test
+      UpdatedBy: sechubman

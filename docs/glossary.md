@@ -16,6 +16,12 @@
 
 ::: sechubman.Rule
 
+### SecurityHub model classes
+
+::: sechubman.StringFilter
+
+::: sechubman.StringFilters
+
 ### Utility classes
 
 ::: sechubman.BotoStubCall

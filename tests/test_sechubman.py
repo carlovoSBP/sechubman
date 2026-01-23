@@ -25,10 +25,10 @@ with Path("tests/fixtures/rules/correct_rules.yaml").open() as file:
     CORRECT_RULES = yaml.safe_load(file)["Rules"]
 with Path("tests/fixtures/rules/broken_rules.yaml").open() as file:
     BROKEN_RULES = yaml.safe_load(file)["Rules"]
-with Path("tests/fixtures/rules/all_filter_types_rules_match.yaml").open() as file:
-    ALL_FILTER_TYPES_RULES_MATCH = yaml.safe_load(file)["Rules"]
-with Path("tests/fixtures/rules/all_filter_types_rules_no_match.yaml").open() as file:
-    ALL_FILTER_TYPES_RULES_NO_MATCH = yaml.safe_load(file)["Rules"]
+with Path("tests/fixtures/rules/all_filter_types_match_rules.yaml").open() as file:
+    ALL_FILTER_TYPES_MATCH_RULES = yaml.safe_load(file)["Rules"]
+with Path("tests/fixtures/rules/all_filter_types_no_match_rules.yaml").open() as file:
+    ALL_FILTER_TYPES_NO_MATCH_RULES = yaml.safe_load(file)["Rules"]
 
 with Path("tests/fixtures/boto/filters.json").open() as file:
     FILTERS = json.load(file)
@@ -119,14 +119,18 @@ class TestRuleDataclass(TestCase):
 
     def test_match(self):
         rule = Rule(
-            **ALL_FILTER_TYPES_RULES_MATCH[0],
+            **ALL_FILTER_TYPES_MATCH_RULES[0],
             boto_securityhub_client=SECURITYHUB_SESSION_CLIENT,
         )
         self.assertTrue(rule.match(FINDINGS["Findings"][0]))
 
     def test_no_match(self):
-        rule = Rule(
-            **ALL_FILTER_TYPES_RULES_NO_MATCH[0],
-            boto_securityhub_client=SECURITYHUB_SESSION_CLIENT,
-        )
-        self.assertFalse(rule.match(FINDINGS["Findings"][0]))
+        for all_filter_type_no_match_rule in ALL_FILTER_TYPES_NO_MATCH_RULES:
+            with self.subTest(
+                all_filter_type_no_match_rule=all_filter_type_no_match_rule
+            ):
+                rule = Rule(
+                    **all_filter_type_no_match_rule,
+                    boto_securityhub_client=SECURITYHUB_SESSION_CLIENT,
+                )
+                self.assertFalse(rule.match(FINDINGS["Findings"][0]))
