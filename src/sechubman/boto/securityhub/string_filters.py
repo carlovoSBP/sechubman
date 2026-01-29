@@ -1,0 +1,91 @@
+"""AWS SecurityHub Finding String Filters."""
+
+from dataclasses import dataclass
+from enum import Enum
+from functools import partial
+from typing import ClassVar
+
+from .filters_interface import AwsSecurityFindingFilter, AwsSecurityFindingFilters
+
+
+def _str_prefix_ne_func(a: str, b: str) -> bool:
+    return not str.startswith(a, b)
+
+
+def _str_not_contains_func(a: str, b: str) -> bool:
+    return not str.__contains__(a, b)
+
+
+class StringComparisons(Enum):
+    """The available string comparison operations linked to their functions."""
+
+    EQUALS = partial(str.__eq__)
+    PREFIX = partial(str.startswith)
+    CONTAINS = partial(str.__contains__)
+    NOT_EQUALS = partial(str.__ne__)
+    PREFIX_NOT_EQUALS = partial(_str_prefix_ne_func)
+    NOT_CONTAINS = partial(_str_not_contains_func)
+
+
+@dataclass
+class StringFilter(AwsSecurityFindingFilter):
+    """Dataclass representing a SecurityHub StringFilter.
+
+    Parameters
+    ----------
+    Comparison : str
+        The comparison operation to use
+    Value : str
+        The value to compare against
+    """
+
+    Comparison: str
+    Value: str
+
+    def __post_init__(self) -> None:
+        """Get the comparison function based on the Comparison attribute."""
+        self.comparison_func = StringComparisons[self.Comparison].value
+
+    def match(self, finding_value: str) -> bool:
+        """Check if a string from a finding matches this string filter.
+
+        Parameters
+        ----------
+        finding_value : str
+            The string from the finding to compare against
+
+        Returns
+        -------
+        bool
+            True if the finding_value matches the filter, False otherwise
+        """
+        return self.comparison_func(finding_value, self.Value)
+
+
+@dataclass
+class StringFilters(AwsSecurityFindingFilters[StringFilter]):
+    """Dataclass representing a collection of SecurityHub StringFilters to be applied on a single finding attribute."""
+
+    filter_type: ClassVar[type] = StringFilter
+    finding_filters: tuple[StringFilter, ...]
+
+    def __post_init__(self) -> None:
+        """Initialize the combined comparison function based on the types of string filters.
+
+        All comparisons must be either positive or negative.
+        Raise ValueError if mixed comparisons are found.
+        """
+        negatives = tuple(
+            "NOT" in finding_filter.Comparison
+            for finding_filter in self.finding_filters
+        )
+        if not any(negatives):
+            self.combined_comparison = any
+        elif all(negatives):
+            self.combined_comparison = all
+        else:
+            msg = """
+                Mixed positive and negative string filters are not supported:
+                https://docs.aws.amazon.com/securityhub/1.0/APIReference/API_StringFilter.html
+                """
+            raise ValueError(msg)

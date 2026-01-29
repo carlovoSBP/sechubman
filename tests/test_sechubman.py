@@ -9,12 +9,11 @@ import botocore.session
 import yaml
 
 from sechubman import (
-    BotoStubCall,
     Rule,
-    stub_boto_client,
     validate_filters,
     validate_updates,
 )
+from sechubman.boto.utils import BotoStubCall, stub_boto_client
 
 os.environ["AWS_DEFAULT_REGION"] = "eu-west-1"
 # Not strictly needed, but speeds up boto client creation
@@ -80,7 +79,8 @@ class TestRuleDataclass(TestCase):
     def setUp(self):
         self.fixed_now = datetime.datetime(2026, 1, 1, 12, 0, 0, 0, datetime.UTC)
         patcher = patch(
-            "sechubman.securityhub.DateFilter._now_utc", return_value=self.fixed_now
+            "sechubman.boto.securityhub.DateFilter._now_utc",
+            return_value=self.fixed_now,
         )
         self.addCleanup(patcher.stop)
         self.mock_now = patcher.start()
