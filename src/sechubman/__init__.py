@@ -1,7 +1,13 @@
 """The main package of sechubman."""
 
 from .sechubman import Rule, validate_filters, validate_updates
-from .securityhub import StringComparisons, StringFilter, StringFilters
+from .securityhub import (
+    DateFilter,
+    DateFilters,
+    StringComparisons,
+    StringFilter,
+    StringFilters,
+)
 from .utils import (
     BotoStubCall,
     get_finding_values_from_boto_argument,
@@ -11,6 +17,8 @@ from .utils import (
 
 __all__ = [
     "BotoStubCall",
+    "DateFilter",
+    "DateFilters",
     "Rule",
     "StringComparisons",
     "StringFilter",

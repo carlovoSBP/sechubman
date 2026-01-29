@@ -65,3 +65,23 @@ Rules:
     Note:
       Text: Test
       UpdatedBy: sechubman
+- Filters:
+    CreatedAt:
+    - End: "2024-12-10T08:53:43.702Z"
+  UpdatesToFilteredFindings:
+    Workflow:
+      Status: SUPPRESSED
+    Note:
+      Text: Test
+      UpdatedBy: sechubman
+- Filters:
+    CreatedAt:
+    - DateRange:
+        Unit: DAYS
+        Value: 10
+  UpdatesToFilteredFindings:
+    Workflow:
+      Status: SUPPRESSED
+    Note:
+      Text: Test
+      UpdatedBy: sechubman

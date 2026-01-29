@@ -25,6 +25,13 @@ Rules:
     Type:
     - Value: AWS-Foundational-Security
       Comparison: CONTAINS
+    CreatedAt:
+    - Start: "2024-12-09T08:53:43.702Z"
+      End: "2026-12-09T08:53:43.702Z"
+    UpdatedAt:
+    - DateRange:
+        Unit: DAYS
+        Value: 100
   UpdatesToFilteredFindings:
     Workflow:
       Status: SUPPRESSED

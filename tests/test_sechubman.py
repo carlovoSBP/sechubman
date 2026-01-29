@@ -1,7 +1,9 @@
+import datetime
 import json
 import os
 from pathlib import Path
 from unittest import TestCase
+from unittest.mock import patch
 
 import botocore.session
 import yaml
@@ -75,6 +77,14 @@ class TestValidateUpdates(TestCase):
 
 
 class TestRuleDataclass(TestCase):
+    def setUp(self):
+        self.fixed_now = datetime.datetime(2026, 1, 1, 12, 0, 0, 0, datetime.UTC)
+        patcher = patch(
+            "sechubman.securityhub.DateFilter._now_utc", return_value=self.fixed_now
+        )
+        self.addCleanup(patcher.stop)
+        self.mock_now = patcher.start()
+
     def _test_multiple_valid_rules(self, rules: list[dict]):
         for rule_dict in rules:
             with self.subTest(rule=rule_dict):
@@ -131,11 +141,13 @@ class TestRuleDataclass(TestCase):
             self.assertFalse(rule.apply())
 
     def test_match(self):
-        rule = Rule(
-            **ALL_FILTER_TYPES_MATCH_RULES[0],
-            boto_securityhub_client=SECURITYHUB_SESSION_CLIENT,
-        )
-        self.assertTrue(rule.match(FINDING_GROOMED))
+        for all_filter_type_match_rule in ALL_FILTER_TYPES_MATCH_RULES:
+            with self.subTest(all_filter_type_match_rule=all_filter_type_match_rule):
+                rule = Rule(
+                    **all_filter_type_match_rule,
+                    boto_securityhub_client=SECURITYHUB_SESSION_CLIENT,
+                )
+                self.assertTrue(rule.match(FINDING_GROOMED))
 
     def test_no_match(self):
         for all_filter_type_no_match_rule in ALL_FILTER_TYPES_NO_MATCH_RULES:

@@ -20,6 +20,10 @@
 
 ### SecurityHub model classes
 
+::: sechubman.DateFilter
+
+::: sechubman.DateFilters
+
 ::: sechubman.StringFilter
 
 ::: sechubman.StringFilters

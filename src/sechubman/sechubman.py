@@ -1,12 +1,17 @@
 """The main module of sechubman."""
 
 import logging
+from collections.abc import Generator
 from dataclasses import dataclass
+from typing import Any
 
 import botocore.session
 from botocore.client import BaseClient
 
-from .securityhub import StringFilter, StringFilters
+from .securityhub import (
+    AwsSecurityFindingFilters,
+    create_aws_security_findings_filters_from_dicts,
+)
 from .utils import (
     BotoStubCall,
     get_finding_values_from_boto_argument,
@@ -92,8 +97,8 @@ def validate_updates(
 class Rule:
     """Dataclass representing a SecurityHub management rule."""
 
-    Filters: dict
-    UpdatesToFilteredFindings: dict
+    Filters: dict[str, list[dict[str, Any]]]
+    UpdatesToFilteredFindings: dict[str, Any]
     boto_securityhub_client: BaseClient
 
     def _validate_updates_to_filtered_findings(self) -> bool:
@@ -176,6 +181,24 @@ class Rule:
 
         return not any_unprocessed
 
+    def _get_filters(
+        self,
+    ) -> Generator[tuple[str, AwsSecurityFindingFilters], None, None]:
+        """Get the rule's filters as AwsSecurityFindingFilters instances.
+
+        Returns
+        -------
+        Generator[tuple[str, AwsSecurityFindingFilters], None, None]
+            The rule's filters as AwsSecurityFindingFilters instances
+        """
+        return (
+            (
+                filter_name,
+                create_aws_security_findings_filters_from_dicts(filters_dicts),
+            )
+            for filter_name, filters_dicts in self.Filters.items()
+        )
+
     def match(self, finding: dict) -> bool:
         """Check if a finding matches the rule's filters.
 
@@ -192,16 +215,11 @@ class Rule:
         return all(
             (
                 any(
-                    StringFilters(
-                        string_filters=[
-                            StringFilter(**comparison)
-                            for comparison in filter_comparisons
-                        ]
-                    ).match(value)
+                    aws_security_finding_filters.match(value)
                     for value in get_finding_values_from_boto_argument(
-                        finding, filter_key
+                        finding, filter_name
                     )
                 )
             )
-            for filter_key, filter_comparisons in self.Filters.items()
+            for filter_name, aws_security_finding_filters in self._get_filters()
         )
