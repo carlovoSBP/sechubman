@@ -103,7 +103,7 @@ class TimeRange:
         return self.is_timestamp_in_range(timestamp)
 
 
-def are_dict_keys_in_collection(dict_: dict, collection: Collection) -> bool:
+def are_keys_in_collection(dict_: dict, collection: Collection) -> bool:
     """Check if all keys in a dict are in a collection.
 
     Parameters
@@ -121,7 +121,7 @@ def are_dict_keys_in_collection(dict_: dict, collection: Collection) -> bool:
     return all(key in collection for key in dict_)
 
 
-def are_dict_keys_in_dataclass_fields(dict_: dict, dataclass_: type) -> bool:
+def are_keys_in_dataclass_fields(dict_: dict, dataclass_: type) -> bool:
     """Check if all keys in a dict are fields in a dataclass.
 
     Parameters
@@ -136,6 +136,4 @@ def are_dict_keys_in_dataclass_fields(dict_: dict, dataclass_: type) -> bool:
     bool
         True if all keys in the dict are fields in the dataclass, False otherwise
     """
-    return are_dict_keys_in_collection(
-        dict_, {field.name for field in fields(dataclass_)}
-    )
+    return are_keys_in_collection(dict_, {field.name for field in fields(dataclass_)})

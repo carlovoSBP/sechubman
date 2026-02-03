@@ -6,21 +6,23 @@ from typing import ClassVar
 
 from sechubman.utils import TimeRange
 
-from .filters_interface import AwsSecurityFindingFilter, AwsSecurityFindingFilters
+from .filters_interface import Criterion, Filter
 
 
 @dataclass
-class DateFilter(AwsSecurityFindingFilter):
-    """Dataclass representing a SecurityHub DateFilter.
+class DateCriterion(Criterion):
+    """Dataclass representing a SecurityHub Date Criterion.
+
+    Either DateRange, or Start or End must be specified.
 
     Parameters
     ----------
     DateRange : dict[str, str]
-        The comparison operation to use
+        Optionally specify a relative date range with a 'Value' key indicating the number of days
     End : str
-        The value to compare against
+        Optionally specify an absolute end date in ISO format
     Start : str
-        The value to compare against
+        Optionally specify an absolute start date in ISO format
     """
 
     DateRange: dict[str, str] = field(default_factory=dict)
@@ -32,7 +34,7 @@ class DateFilter(AwsSecurityFindingFilter):
         return datetime.now(UTC)
 
     def __post_init__(self) -> None:
-        """Initialize the date filter on DateRange or Start/End."""
+        """Initialize the date criterion on DateRange or Start/End."""
         self.time_range = (
             TimeRange(
                 self._now_utc() - timedelta(days=int(self.DateRange["Value"])),
@@ -43,7 +45,7 @@ class DateFilter(AwsSecurityFindingFilter):
         )
 
     def match(self, finding_value: str) -> bool:
-        """Check if a datetime string from a finding matches this string filter.
+        """Check if a datetime string from a finding matches this date criterion.
 
         Parameters
         ----------
@@ -53,14 +55,14 @@ class DateFilter(AwsSecurityFindingFilter):
         Returns
         -------
         bool
-            True if the finding_value matches the filter, False otherwise
+            True if the finding_value matches the criterion, False otherwise
         """
         return self.time_range.is_timestamp_str_in_range(finding_value)
 
 
 @dataclass
-class DateFilters(AwsSecurityFindingFilters[DateFilter]):
-    """Dataclass representing a collection of SecurityHub DateFilters to be applied on a single finding attribute."""
+class DateFilter(Filter[DateCriterion]):
+    """Dataclass representing a SecurityHub DateFilter to be applied on a single finding attribute."""
 
-    filter_type: ClassVar[type] = DateFilter
-    finding_filters: tuple[DateFilter, ...]
+    criterion_type: ClassVar[type] = DateCriterion
+    criterions: tuple[DateCriterion, ...]

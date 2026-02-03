@@ -5,7 +5,7 @@ from enum import Enum
 from functools import partial
 from typing import ClassVar
 
-from .filters_interface import AwsSecurityFindingFilter, AwsSecurityFindingFilters
+from .filters_interface import Criterion, Filter
 
 
 def _str_prefix_ne_func(a: str, b: str) -> bool:
@@ -28,8 +28,8 @@ class StringComparisons(Enum):
 
 
 @dataclass
-class StringFilter(AwsSecurityFindingFilter):
-    """Dataclass representing a SecurityHub StringFilter.
+class StringCriterion(Criterion):
+    """Dataclass representing a SecurityHub String Criterion.
 
     Parameters
     ----------
@@ -47,7 +47,7 @@ class StringFilter(AwsSecurityFindingFilter):
         self.comparison_func = StringComparisons[self.Comparison].value
 
     def match(self, finding_value: str) -> bool:
-        """Check if a string from a finding matches this string filter.
+        """Check if a string from a finding matches this string criterion.
 
         Parameters
         ----------
@@ -57,27 +57,26 @@ class StringFilter(AwsSecurityFindingFilter):
         Returns
         -------
         bool
-            True if the finding_value matches the filter, False otherwise
+            True if the finding_value matches the criterion, False otherwise
         """
         return self.comparison_func(finding_value, self.Value)
 
 
 @dataclass
-class StringFilters(AwsSecurityFindingFilters[StringFilter]):
-    """Dataclass representing a collection of SecurityHub StringFilters to be applied on a single finding attribute."""
+class StringFilter(Filter[StringCriterion]):
+    """Dataclass representing a SecurityHub StringFilter to be applied on a single finding attribute."""
 
-    filter_type: ClassVar[type] = StringFilter
-    finding_filters: tuple[StringFilter, ...]
+    criterion_type: ClassVar[type] = StringCriterion
+    criterions: tuple[StringCriterion, ...]
 
     def __post_init__(self) -> None:
-        """Initialize the combined comparison function based on the types of string filters.
+        """Initialize the combined comparison function based on the types of criterions.
 
-        All comparisons must be either positive or negative.
-        Raise ValueError if mixed comparisons are found.
+        All criterions must be either positive or negative.
+        Raise ValueError if mixed criterions are found.
         """
         negatives = tuple(
-            "NOT" in finding_filter.Comparison
-            for finding_filter in self.finding_filters
+            "NOT" in criterion.Comparison for criterion in self.criterions
         )
         if not any(negatives):
             self.combined_comparison = any
@@ -85,7 +84,7 @@ class StringFilters(AwsSecurityFindingFilters[StringFilter]):
             self.combined_comparison = all
         else:
             msg = """
-                Mixed positive and negative string filters are not supported:
+                Mixed positive and negative string criterions are not supported:
                 https://docs.aws.amazon.com/securityhub/1.0/APIReference/API_StringFilter.html
                 """
             raise ValueError(msg)

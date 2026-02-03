@@ -86,7 +86,7 @@ class TestRuleDataclass(TestCase):
     def setUp(self):
         self.fixed_now = datetime.datetime(2026, 1, 1, 12, 0, 0, 0, datetime.UTC)
         patcher = patch(
-            "sechubman.filters.DateFilter._now_utc",
+            "sechubman.filters.DateCriterion._now_utc",
             return_value=self.fixed_now,
         )
         self.addCleanup(patcher.stop)
@@ -95,7 +95,7 @@ class TestRuleDataclass(TestCase):
     def _test_multiple_valid_rules(self, rules: list[dict]):
         for rule_dict in rules:
             with self.subTest(rule=rule_dict):
-                Rule(**rule_dict, boto_securityhub_client=SECURITYHUB_SESSION_CLIENT)
+                Rule(**rule_dict, client=SECURITYHUB_SESSION_CLIENT)
 
     def test_valid_rule(self):
         self._test_multiple_valid_rules(CORRECT_RULES)
@@ -111,7 +111,7 @@ class TestRuleDataclass(TestCase):
             ParamValidationError,
             Rule,
             **BROKEN_RULES[0],
-            boto_securityhub_client=SECURITYHUB_SESSION_CLIENT,
+            client=SECURITYHUB_SESSION_CLIENT,
         )
 
     def test_invalid_rule_business_logic(self):
@@ -119,13 +119,11 @@ class TestRuleDataclass(TestCase):
             ValueError,
             Rule,
             **BROKEN_RULES[1],
-            boto_securityhub_client=SECURITYHUB_SESSION_CLIENT,
+            client=SECURITYHUB_SESSION_CLIENT,
         )
 
     def test_apply(self):
-        rule = Rule(
-            **CORRECT_RULES[0], boto_securityhub_client=SECURITYHUB_SESSION_CLIENT
-        )
+        rule = Rule(**CORRECT_RULES[0], client=SECURITYHUB_SESSION_CLIENT)
         with stub_boto_client(
             SECURITYHUB_SESSION_CLIENT,
             [
@@ -133,12 +131,10 @@ class TestRuleDataclass(TestCase):
                 BotoStubCall("batch_update_findings", PROCESSED, UPDATES),
             ],
         ):
-            self.assertTrue(rule.apply())
+            self.assertTrue(rule.get_and_update())
 
     def test_apply_unprocessed(self):
-        rule = Rule(
-            **CORRECT_RULES[0], boto_securityhub_client=SECURITYHUB_SESSION_CLIENT
-        )
+        rule = Rule(**CORRECT_RULES[0], client=SECURITYHUB_SESSION_CLIENT)
         with stub_boto_client(
             SECURITYHUB_SESSION_CLIENT,
             [
@@ -146,14 +142,14 @@ class TestRuleDataclass(TestCase):
                 BotoStubCall("batch_update_findings", UNPROCESSED, UPDATES),
             ],
         ):
-            self.assertFalse(rule.apply())
+            self.assertFalse(rule.get_and_update())
 
     def test_match(self):
         for all_filter_type_match_rule in ALL_FILTER_TYPES_MATCH_RULES:
             with self.subTest(all_filter_type_match_rule=all_filter_type_match_rule):
                 rule = Rule(
                     **all_filter_type_match_rule,
-                    boto_securityhub_client=SECURITYHUB_SESSION_CLIENT,
+                    client=SECURITYHUB_SESSION_CLIENT,
                 )
                 self.assertTrue(rule.match(FINDING_GROOMED))
 
@@ -164,6 +160,6 @@ class TestRuleDataclass(TestCase):
             ):
                 rule = Rule(
                     **all_filter_type_no_match_rule,
-                    boto_securityhub_client=SECURITYHUB_SESSION_CLIENT,
+                    client=SECURITYHUB_SESSION_CLIENT,
                 )
                 self.assertFalse(rule.match(FINDING_GROOMED))

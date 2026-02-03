@@ -7,12 +7,9 @@ from typing import Any
 from botocore.client import BaseClient
 
 from .boto_utils import (
-    get_finding_values_from_boto_argument,
+    get_values_by_boto_argument,
 )
-from .filters import (
-    AwsSecurityFindingFilters,
-    create_aws_security_findings_filters_from_dicts,
-)
+from .filters import Filter, create_filters
 from .sechubman import validate_filters, validate_updates
 
 LOGGER = logging.getLogger(__name__)
@@ -24,7 +21,7 @@ class Rule:
 
     Filters: dict[str, list[dict[str, Any]]]
     UpdatesToFilteredFindings: dict[str, Any]
-    boto_securityhub_client: BaseClient
+    client: BaseClient
 
     def __post_init__(self) -> None:
         """Validate the rule upon initialization."""
@@ -53,7 +50,7 @@ class Rule:
             }
         ]
 
-        validate_updates(updates_copy, self.boto_securityhub_client)
+        validate_updates(updates_copy, self.client)
 
     def _validate_boto_compatibility(self) -> None:
         """Validate the rule beyond the top-level arguments.
@@ -63,12 +60,12 @@ class Rule:
         botocore.exceptions.ParamValidationError
             If the rule is invalid beyond the top-level arguments
         """
-        validate_filters(self.Filters, self.boto_securityhub_client)
+        validate_filters(self.Filters, self.client)
         self._validate_updates_to_filtered_findings()
 
     def _create_filters(
         self,
-    ) -> dict[str, AwsSecurityFindingFilters]:
+    ) -> dict[str, Filter]:
         """Get the rule's filters as AwsSecurityFindingFilters instances.
 
         Returns
@@ -77,19 +74,19 @@ class Rule:
             The rule's filters as AwsSecurityFindingFilters instances
         """
         return {
-            filter_name: create_aws_security_findings_filters_from_dicts(filters_dicts)
+            filter_name: create_filters(filters_dicts)
             for filter_name, filters_dicts in self.Filters.items()
         }
 
-    def apply(self) -> bool:
-        """Apply the rule in AWS SecurityHub.
+    def get_and_update(self) -> bool:
+        """Get all the findings matching the rule's filters from AWS SecurityHub and update them according to the rule's updates.
 
         Returns
         -------
         bool
             True if all findings were processed successfully, False otherwise
         """
-        paginator = self.boto_securityhub_client.get_paginator("get_findings")
+        paginator = self.client.get_paginator("get_findings")
         page_iterator = paginator.paginate(
             Filters=self.Filters, PaginationConfig={"MaxItems": 100, "PageSize": 100}
         )
@@ -113,7 +110,7 @@ class Rule:
                 )
                 break
 
-            response = self.boto_securityhub_client.batch_update_findings(**updates)
+            response = self.client.batch_update_findings(**updates)
             processed = response["ProcessedFindings"]
             unprocessed = response["UnprocessedFindings"]
 
@@ -141,9 +138,7 @@ class Rule:
             (
                 any(
                     aws_security_finding_filters.match(value)
-                    for value in get_finding_values_from_boto_argument(
-                        finding, filter_name
-                    )
+                    for value in get_values_by_boto_argument(finding, filter_name)
                 )
             )
             for filter_name, aws_security_finding_filters in self._filters.items()

@@ -7,59 +7,66 @@ from typing import TypeVar
 
 
 @dataclass
-class AwsSecurityFindingFilter(ABC):
-    """Abstract base class for AWS Security Finding Filter."""
+class Criterion(ABC):
+    """Abstract base class for AWS Security Finding Filter criterion.
+
+    Criterions are the individual filter conditions that make up a Filter.
+    """
 
     @abstractmethod
     def __post_init__(self) -> None:
-        """Post-initialization must parse filter-specific input parameters."""
+        """Post-initialization must parse criterion-specific input parameters."""
 
     @abstractmethod
     def match(self, finding_value: str) -> bool:
-        """Check if a finding value matches this filter.
+        """Check if a finding value matches this criterion.
 
         Parameters
         ----------
         finding_value : str
-            The value from the finding to compare against the filter
+            The value from the finding to compare against the criterion
 
         Returns
         -------
         bool
-            True if the finding_value matches the filter, False otherwise
+            True if the finding_value matches the criterion, False otherwise
         """
 
 
-TFilter = TypeVar("TFilter", bound=AwsSecurityFindingFilter)
+TFilter = TypeVar("TFilter", bound=Criterion)
 
 
 @dataclass
-class AwsSecurityFindingFilters[TFilter: AwsSecurityFindingFilter](ABC):
-    """Abstract base class for AWS Security Finding Filters."""
+class Filter[TFilter: Criterion](ABC):
+    """Abstract base class for an AWS Security Finding Filter.
 
-    finding_filters: tuple[TFilter, ...]
+    A Filter is made up of one or more single-typed Criterions combined with a logical operation
+    Criterions are more strictly defined than a Filter.
+    Therefore, a filter has a criterion_type attribute to indicate which type of Criterion it contains.
+    """
+
+    criterions: tuple[TFilter, ...]
     combined_comparison: Callable = any
 
     @property
     @abstractmethod
-    def filter_type(self) -> type:
-        """The type of AwsSecurityFindingFilter this class relates to."""
+    def criterion_type(self) -> type:
+        """The type of criterion this class relates to."""
 
     def match(self, finding_value: str) -> bool:
         """
-        Check if a finding value matches the filters.
+        Check if a finding value matches the filter's criterions.
 
         Parameters
         ----------
         finding_value : str
-            The value string from the finding to compare against the filters
+            The value string from the finding to compare against the criterions
 
         Returns
         -------
         bool
-            True if the finding_value matches the combined filters, False otherwise
+            True if the finding_value matches the combined criterions, False otherwise
         """
         return self.combined_comparison(
-            finding_filter.match(finding_value)
-            for finding_filter in self.finding_filters
+            criterion.match(finding_value) for criterion in self.criterions
         )

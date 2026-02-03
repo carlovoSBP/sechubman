@@ -9,8 +9,8 @@ from botocore.client import BaseClient
 from botocore.stub import Stubber
 
 
-def get_finding_values_from_boto_argument(finding: dict, name: str) -> list[str]:
-    """Get the values if a finding for a given boto argument name.
+def get_values_by_boto_argument(finding: dict, name: str) -> list[str]:
+    """Get the values in a finding for a given boto argument name.
 
     Some arguments in:
     https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/securityhub/client/get_findings.html
@@ -96,7 +96,7 @@ def stub_boto_client(
         stubber.deactivate()
 
 
-def validate_boto_call_params(
+def validate_call_params(
     boto_stub_calls: list[BotoStubCall],
     boto_session_client: BaseClient,
 ) -> None:

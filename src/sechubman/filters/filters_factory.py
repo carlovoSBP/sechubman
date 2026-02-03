@@ -3,47 +3,45 @@
 from enum import Enum
 from typing import Any
 
-from sechubman.utils import are_dict_keys_in_dataclass_fields
+from sechubman.utils import are_keys_in_dataclass_fields
 
-from .date import DateFilters
-from .filters_interface import AwsSecurityFindingFilters
-from .string import StringFilters
+from .date import DateFilter
+from .filters_interface import Filter
+from .string import StringFilter
 
 
-class AllAwsSecurityFindingFilters(Enum):
+class AllFilters(Enum):
     """Enum representing all available AwsSecurityFindingFilters types."""
 
-    DATE_FILTERS = DateFilters
-    STRING_FILTERS = StringFilters
+    DATE_FILTERS = DateFilter
+    STRING_FILTERS = StringFilter
 
 
-def match_dict_to_aws_security_findings_filters(
-    filters_dict: dict[str, Any],
-) -> type[AwsSecurityFindingFilters]:
+def match_to_filter_type(
+    filter_dict: dict[str, Any],
+) -> type[Filter]:
     """Match a filters dict to an AwsSecurityFindingFilters type.
 
     Parameters
     ----------
-    filters_dict : dict[str, Any]
+    filter_dict : dict[str, Any]
         The filters dict to match
 
     Returns
     -------
-    type[AwsSecurityFindingFilters]
+    type[Filter]
         The matched AwsSecurityFindingFilters type
     """
     return next(
-        filters_type.value
-        for filters_type in AllAwsSecurityFindingFilters
-        if are_dict_keys_in_dataclass_fields(
-            filters_dict, filters_type.value.filter_type
-        )
+        filter_type.value
+        for filter_type in AllFilters
+        if are_keys_in_dataclass_fields(filter_dict, filter_type.value.criterion_type)
     )
 
 
-def create_aws_security_findings_filters_from_dicts(
+def create_filters(
     filters_dicts: list[dict[str, Any]],
-) -> AwsSecurityFindingFilters:
+) -> Filter:
     """Create an AwsSecurityFindingFilters instance from a list of filters dicts.
 
     Filters dicts must all correspond to the same AwsSecurityFindingFilters type.
@@ -55,12 +53,12 @@ def create_aws_security_findings_filters_from_dicts(
 
     Returns
     -------
-    AwsSecurityFindingFilters
+    Filter
         The created AwsSecurityFindingFilters instance
     """
-    filters_type = match_dict_to_aws_security_findings_filters(filters_dicts[0])
-    return filters_type(
-        finding_filters=tuple(
-            filters_type.filter_type(**comparison) for comparison in filters_dicts
+    filter_type = match_to_filter_type(filters_dicts[0])
+    return filter_type(
+        criterions=tuple(
+            filter_type.criterion_type(**comparison) for comparison in filters_dicts
         )
     )

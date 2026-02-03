@@ -2,30 +2,30 @@
 
 ## Interface
 
-::: sechubman.filters.AwsSecurityFindingFilter
+::: sechubman.filters.Criterion
 
-::: sechubman.filters.AwsSecurityFindingFilters
+::: sechubman.filters.Filter
 
 ## Type-specific models
 
 ::: sechubman.filters.StringComparisons
 
+::: sechubman.filters.StringCriterion
+
 ::: sechubman.filters.StringFilter
 
-::: sechubman.filters.StringFilters
+::: sechubman.filters.DateCriterion
 
 ::: sechubman.filters.DateFilter
-
-::: sechubman.filters.DateFilters
 
 ## Factory utilities
 
 ### Public functions
 
-::: sechubman.filters.create_aws_security_findings_filters_from_dicts
+::: sechubman.filters.create_filters
 
-::: sechubman.filters.match_dict_to_aws_security_findings_filters
+::: sechubman.filters.match_to_filter_type
 
 ### Public classes
 
-::: sechubman.filters.AllAwsSecurityFindingFilters
+::: sechubman.filters.AllFilters
