@@ -12,18 +12,18 @@ from .boto import (
 def _validate_securityhub_call_params(
     boto_stub_responses: list[BotoStubCall],
     securityhub_session_client: BaseClient | None = None,
-) -> bool:
+) -> None:
     if not securityhub_session_client:
         securityhub_session_client = botocore.session.get_session().create_client(
             "securityhub"
         )
 
-    return validate_boto_call_params(boto_stub_responses, securityhub_session_client)
+    validate_boto_call_params(boto_stub_responses, securityhub_session_client)
 
 
 def validate_filters(
     filters: dict, securityhub_session_client: BaseClient | None = None
-) -> bool:
+) -> None:
     """Validate AWS SecurityHub filters to get findings.
 
     Parameters
@@ -34,12 +34,12 @@ def validate_filters(
         A boto session BaseClient for AWS SecurityHub
         Tries to create one if not provided
 
-    Returns
-    -------
-    bool
-        True if the filters are valid, False otherwise
+    Raises
+    ------
+    botocore.exceptions.ParamValidationError
+        If the filters contain invalid values
     """
-    return _validate_securityhub_call_params(
+    _validate_securityhub_call_params(
         [
             BotoStubCall(
                 method="get_findings",
@@ -53,7 +53,7 @@ def validate_filters(
 
 def validate_updates(
     updates: dict, securityhub_session_client: BaseClient | None = None
-) -> bool:
+) -> None:
     """Validate AWS SecurityHub updates to findings.
 
     Parameters
@@ -64,12 +64,12 @@ def validate_updates(
         A boto session BaseClient for AWS SecurityHub
         Tries to create one if not provided
 
-    Returns
-    -------
-    bool
-        True if the updates are valid, False otherwise
+    Raises
+    ------
+    botocore.exceptions.ParamValidationError
+        If the updates contain invalid values
     """
-    return _validate_securityhub_call_params(
+    _validate_securityhub_call_params(
         [
             BotoStubCall(
                 method="batch_update_findings",

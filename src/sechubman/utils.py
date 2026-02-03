@@ -49,8 +49,8 @@ class TimeRange:
             msg = "At least one of start or end must be set."
             raise ValueError(msg)
 
-    @staticmethod
-    def from_str(start_str: str, end_str: str) -> "TimeRange":
+    @classmethod
+    def from_str(cls, start_str: str, end_str: str) -> "TimeRange":
         """Create a TimeRange instance from ISO format timestamp strings.
 
         Parameters
@@ -67,7 +67,7 @@ class TimeRange:
         """
         start = parse_timestamp_str_if_set(start_str)
         end = parse_timestamp_str_if_set(end_str)
-        return TimeRange(start=start, end=end)
+        return cls(start=start, end=end)
 
     def is_timestamp_in_range(self, timestamp: datetime) -> bool:
         """Check if a datetime timestamp is within the time range.

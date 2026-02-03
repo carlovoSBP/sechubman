@@ -1,7 +1,6 @@
 """The main domain model of sechubman."""
 
 import logging
-from collections.abc import Generator
 from dataclasses import dataclass
 from typing import Any
 
@@ -27,19 +26,24 @@ class Rule:
     UpdatesToFilteredFindings: dict[str, Any]
     boto_securityhub_client: BaseClient
 
-    def _validate_updates_to_filtered_findings(self) -> bool:
-        """Validate the updates_to_filtered_findings argument.
+    def __post_init__(self) -> None:
+        """Validate the rule upon initialization."""
+        self._validate_boto_compatibility()
+        self._filters = self._create_filters()
 
-        Returns
-        -------
-        bool
-            True if the updates_to_filtered_findings argument is valid, False otherwise
+    def _validate_updates_to_filtered_findings(self) -> None:
+        """Validate the UpdatesToFilteredFindings argument.
+
+        Raises
+        ------
+        botocore.exceptions.ParamValidationError
+            If the UpdatesToFilteredFindings argument contains invalid values
+        ValueError
+            If 'FindingIdentifiers' is directly set in UpdatesToFilteredFindings
         """
         if "FindingIdentifiers" in self.UpdatesToFilteredFindings:
-            LOGGER.warning(
-                "Validation error: 'FindingIdentifiers' should not be directly set in 'updates_to_filtered_findings'"
-            )
-            return False
+            msg = "'FindingIdentifiers' should not be directly set in 'UpdatesToFilteredFindings'"
+            raise ValueError(msg)
 
         updates_copy = self.UpdatesToFilteredFindings.copy()
         updates_copy["FindingIdentifiers"] = [
@@ -49,20 +53,33 @@ class Rule:
             }
         ]
 
-        return validate_updates(updates_copy, self.boto_securityhub_client)
+        validate_updates(updates_copy, self.boto_securityhub_client)
 
-    def validate_deep(self) -> bool:
+    def _validate_boto_compatibility(self) -> None:
         """Validate the rule beyond the top-level arguments.
+
+        Raises
+        ------
+        botocore.exceptions.ParamValidationError
+            If the rule is invalid beyond the top-level arguments
+        """
+        validate_filters(self.Filters, self.boto_securityhub_client)
+        self._validate_updates_to_filtered_findings()
+
+    def _create_filters(
+        self,
+    ) -> dict[str, AwsSecurityFindingFilters]:
+        """Get the rule's filters as AwsSecurityFindingFilters instances.
 
         Returns
         -------
-        bool
-            True if the rule is valid beyond the top-level arguments, False otherwise
+        dict[str, AwsSecurityFindingFilters]
+            The rule's filters as AwsSecurityFindingFilters instances
         """
-        filters_valid = validate_filters(self.Filters, self.boto_securityhub_client)
-        updates_valid = self._validate_updates_to_filtered_findings()
-
-        return filters_valid and updates_valid
+        return {
+            filter_name: create_aws_security_findings_filters_from_dicts(filters_dicts)
+            for filter_name, filters_dicts in self.Filters.items()
+        }
 
     def apply(self) -> bool:
         """Apply the rule in AWS SecurityHub.
@@ -107,24 +124,6 @@ class Rule:
 
         return not any_unprocessed
 
-    def _get_filters(
-        self,
-    ) -> Generator[tuple[str, AwsSecurityFindingFilters], None, None]:
-        """Get the rule's filters as AwsSecurityFindingFilters instances.
-
-        Returns
-        -------
-        Generator[tuple[str, AwsSecurityFindingFilters], None, None]
-            The rule's filters as AwsSecurityFindingFilters instances
-        """
-        return (
-            (
-                filter_name,
-                create_aws_security_findings_filters_from_dicts(filters_dicts),
-            )
-            for filter_name, filters_dicts in self.Filters.items()
-        )
-
     def match(self, finding: dict) -> bool:
         """Check if a finding matches the rule's filters.
 
@@ -147,5 +146,5 @@ class Rule:
                     )
                 )
             )
-            for filter_name, aws_security_finding_filters in self._get_filters()
+            for filter_name, aws_security_finding_filters in self._filters.items()
         )

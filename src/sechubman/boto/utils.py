@@ -1,16 +1,12 @@
 """Boto-related utilities for sechubman."""
 
-import logging
 from collections.abc import Generator
 from contextlib import contextmanager
 from dataclasses import asdict, dataclass
 from typing import Any
 
 from botocore.client import BaseClient
-from botocore.exceptions import ParamValidationError
 from botocore.stub import Stubber
-
-LOGGER = logging.getLogger(__name__)
 
 
 def get_finding_values_from_boto_argument(finding: dict, name: str) -> list[str]:
@@ -103,7 +99,7 @@ def stub_boto_client(
 def validate_boto_call_params(
     boto_stub_calls: list[BotoStubCall],
     boto_session_client: BaseClient,
-) -> bool:
+) -> None:
     """Validate boto call parameters by attempting to call the methods with the expected parameters in a stubbed context.
 
     Parameters
@@ -113,24 +109,14 @@ def validate_boto_call_params(
     boto_session_client : BaseClient
         The boto session BaseClient that will be used for validation
 
-    Returns
-    -------
-    bool
-        True if all calls' parameters are valid, False otherwise
+    Raises
+    ------
+    botocore.exceptions.ParamValidationError
+        If any of the boto parameters contain invalid values
     """
-    valid = False
-
     with stub_boto_client(
         boto_session_client,
         boto_stub_calls,
     ) as _:
-        try:
-            for response in boto_stub_calls:
-                getattr(boto_session_client, response.method)(
-                    **response.expected_params
-                )
-            valid = True
-        except ParamValidationError as e:
-            LOGGER.warning("Validation error: %s", e)
-
-    return valid
+        for response in boto_stub_calls:
+            getattr(boto_session_client, response.method)(**response.expected_params)

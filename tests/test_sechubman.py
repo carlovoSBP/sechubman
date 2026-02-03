@@ -7,6 +7,7 @@ from unittest.mock import patch
 
 import botocore.session
 import yaml
+from botocore.exceptions import ParamValidationError
 
 from sechubman import (
     Rule,
@@ -54,10 +55,12 @@ class TestSmoke(TestCase):
 
 class TestValidateFilters(TestCase):
     def test_valid_filters(self):
-        self.assertTrue(validate_filters(CORRECT_RULES[0]["Filters"]))
+        self.assertIsNone(validate_filters(CORRECT_RULES[0]["Filters"]))
 
     def test_invalid_filters(self):
-        self.assertFalse(validate_filters(BROKEN_RULES[0]["Filters"]))
+        self.assertRaises(
+            ParamValidationError, validate_filters, BROKEN_RULES[0]["Filters"]
+        )
 
 
 class TestValidateUpdates(TestCase):
@@ -69,10 +72,14 @@ class TestValidateUpdates(TestCase):
                 "ProductArn": "SomeProductArn",
             }
         ]
-        self.assertTrue(validate_updates(first_rule_updates))
+        self.assertIsNone(validate_updates(first_rule_updates))
 
     def test_invalid_updates(self):
-        self.assertFalse(validate_updates(BROKEN_RULES[0]["UpdatesToFilteredFindings"]))
+        self.assertRaises(
+            ParamValidationError,
+            validate_updates,
+            BROKEN_RULES[0]["UpdatesToFilteredFindings"],
+        )
 
 
 class TestRuleDataclass(TestCase):
@@ -88,10 +95,7 @@ class TestRuleDataclass(TestCase):
     def _test_multiple_valid_rules(self, rules: list[dict]):
         for rule_dict in rules:
             with self.subTest(rule=rule_dict):
-                rule = Rule(
-                    **rule_dict, boto_securityhub_client=SECURITYHUB_SESSION_CLIENT
-                )
-                self.assertTrue(rule.validate_deep())
+                Rule(**rule_dict, boto_securityhub_client=SECURITYHUB_SESSION_CLIENT)
 
     def test_valid_rule(self):
         self._test_multiple_valid_rules(CORRECT_RULES)
@@ -103,18 +107,25 @@ class TestRuleDataclass(TestCase):
         self._test_multiple_valid_rules(ALL_FILTER_TYPES_NO_MATCH_RULES)
 
     def test_invalid_rule_boto(self):
-        rule = Rule(
-            **BROKEN_RULES[0], boto_securityhub_client=SECURITYHUB_SESSION_CLIENT
+        self.assertRaises(
+            ParamValidationError,
+            Rule,
+            **BROKEN_RULES[0],
+            boto_securityhub_client=SECURITYHUB_SESSION_CLIENT,
         )
-        self.assertFalse(rule.validate_deep())
 
     def test_invalid_rule_business_logic(self):
-        rule = Rule(
-            **BROKEN_RULES[1], boto_securityhub_client=SECURITYHUB_SESSION_CLIENT
+        self.assertRaises(
+            ValueError,
+            Rule,
+            **BROKEN_RULES[1],
+            boto_securityhub_client=SECURITYHUB_SESSION_CLIENT,
         )
-        self.assertFalse(rule.validate_deep())
 
     def test_apply(self):
+        rule = Rule(
+            **CORRECT_RULES[0], boto_securityhub_client=SECURITYHUB_SESSION_CLIENT
+        )
         with stub_boto_client(
             SECURITYHUB_SESSION_CLIENT,
             [
@@ -122,12 +133,12 @@ class TestRuleDataclass(TestCase):
                 BotoStubCall("batch_update_findings", PROCESSED, UPDATES),
             ],
         ):
-            rule = Rule(
-                **CORRECT_RULES[0], boto_securityhub_client=SECURITYHUB_SESSION_CLIENT
-            )
             self.assertTrue(rule.apply())
 
     def test_apply_unprocessed(self):
+        rule = Rule(
+            **CORRECT_RULES[0], boto_securityhub_client=SECURITYHUB_SESSION_CLIENT
+        )
         with stub_boto_client(
             SECURITYHUB_SESSION_CLIENT,
             [
@@ -135,9 +146,6 @@ class TestRuleDataclass(TestCase):
                 BotoStubCall("batch_update_findings", UNPROCESSED, UPDATES),
             ],
         ):
-            rule = Rule(
-                **CORRECT_RULES[0], boto_securityhub_client=SECURITYHUB_SESSION_CLIENT
-            )
             self.assertFalse(rule.apply())
 
     def test_match(self):
