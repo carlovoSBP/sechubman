@@ -6,10 +6,10 @@ from typing import Any
 
 from botocore.client import BaseClient
 
-from .boto import (
+from .boto_utils import (
     get_finding_values_from_boto_argument,
 )
-from .boto.securityhub import (
+from .filters import (
     AwsSecurityFindingFilters,
     create_aws_security_findings_filters_from_dicts,
 )

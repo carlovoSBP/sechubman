@@ -1,6 +1,6 @@
 """SecurityHub-related functionality for sechubman."""
 
-from .date_filters import DateFilter, DateFilters
+from .date import DateFilter, DateFilters
 from .filters_factory import (
     AllAwsSecurityFindingFilters,
     create_aws_security_findings_filters_from_dicts,
@@ -10,7 +10,7 @@ from .filters_interface import (
     AwsSecurityFindingFilter,
     AwsSecurityFindingFilters,
 )
-from .string_filters import StringComparisons, StringFilter, StringFilters
+from .string import StringComparisons, StringFilter, StringFilters
 
 __all__ = [
     "AllAwsSecurityFindingFilters",

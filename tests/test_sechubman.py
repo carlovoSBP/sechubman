@@ -14,7 +14,7 @@ from sechubman import (
     validate_filters,
     validate_updates,
 )
-from sechubman.boto.utils import BotoStubCall, stub_boto_client
+from sechubman.boto_utils import BotoStubCall, stub_boto_client
 
 os.environ["AWS_DEFAULT_REGION"] = "eu-west-1"
 # Not strictly needed, but speeds up boto client creation
@@ -32,17 +32,17 @@ with Path("tests/fixtures/rules/all_filter_types_match_rules.yaml").open() as fi
 with Path("tests/fixtures/rules/all_filter_types_no_match_rules.yaml").open() as file:
     ALL_FILTER_TYPES_NO_MATCH_RULES = yaml.safe_load(file)["Rules"]
 
-with Path("tests/fixtures/boto/filters.json").open() as file:
+with Path("tests/fixtures/calls/filters.json").open() as file:
     FILTERS = json.load(file)
-with Path("tests/fixtures/boto/findings_trimmed.json").open() as file:
+with Path("tests/fixtures/responses/findings_trimmed.json").open() as file:
     FINDINGS = json.load(file)
-with Path("tests/fixtures/boto/finding_groomed.json").open() as file:
+with Path("tests/fixtures/responses/finding_groomed.json").open() as file:
     FINDING_GROOMED = json.load(file)
-with Path("tests/fixtures/boto/updates.json").open() as file:
+with Path("tests/fixtures/calls/updates.json").open() as file:
     UPDATES = json.load(file)
-with Path("tests/fixtures/boto/processed.json").open() as file:
+with Path("tests/fixtures/responses/processed.json").open() as file:
     PROCESSED = json.load(file)
-with Path("tests/fixtures/boto/unprocessed.json").open() as file:
+with Path("tests/fixtures/responses/unprocessed.json").open() as file:
     UNPROCESSED = json.load(file)
 
 SECURITYHUB_SESSION_CLIENT = botocore.session.get_session().create_client("securityhub")
@@ -86,7 +86,7 @@ class TestRuleDataclass(TestCase):
     def setUp(self):
         self.fixed_now = datetime.datetime(2026, 1, 1, 12, 0, 0, 0, datetime.UTC)
         patcher = patch(
-            "sechubman.boto.securityhub.DateFilter._now_utc",
+            "sechubman.filters.DateFilter._now_utc",
             return_value=self.fixed_now,
         )
         self.addCleanup(patcher.stop)

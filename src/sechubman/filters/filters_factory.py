@@ -5,9 +5,9 @@ from typing import Any
 
 from sechubman.utils import are_dict_keys_in_dataclass_fields
 
-from .date_filters import DateFilters
+from .date import DateFilters
 from .filters_interface import AwsSecurityFindingFilters
-from .string_filters import StringFilters
+from .string import StringFilters
 
 
 class AllAwsSecurityFindingFilters(Enum):

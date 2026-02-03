@@ -3,7 +3,7 @@
 import botocore.session
 from botocore.client import BaseClient
 
-from .boto import (
+from .boto_utils import (
     BotoStubCall,
     validate_boto_call_params,
 )

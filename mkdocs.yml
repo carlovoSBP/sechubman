@@ -13,9 +13,8 @@ nav:
   - Glossary:
     - "Main top-level functionality": glossary/index.md
     - "Generic utilities": glossary/utils.md
-    - "Boto-related utilities": glossary/boto/utils.md
-    - "Domain models of AWS SecurityHub Finding Filters": glossary/boto/securityhub/filters.md
-    - "AWS SecurityHub Finding Filters Factory": glossary/boto/securityhub/filters_factory.md
+    - "Boto-related utilities": glossary/boto_utils.md
+    - "Domain models": glossary/filters.md
 
 watch:
   - src
