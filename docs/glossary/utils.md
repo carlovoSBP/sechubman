@@ -2,7 +2,7 @@
 
 ## Public functions
 
-::: sechubman.is_empty_or_valid
+::: sechubman.is_valid_against_reference
 
 ::: sechubman.parse_timestamp_str_if_set
 

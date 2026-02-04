@@ -12,7 +12,7 @@ from .utils import (
     TimeRange,
     are_keys_in_collection,
     are_keys_in_dataclass_fields,
-    is_empty_or_valid,
+    is_valid_against_reference,
     parse_timestamp_str_if_set,
 )
 
@@ -23,7 +23,7 @@ __all__ = [
     "are_keys_in_collection",
     "are_keys_in_dataclass_fields",
     "get_values_by_boto_argument",
-    "is_empty_or_valid",
+    "is_valid_against_reference",
     "parse_timestamp_str_if_set",
     "stub_boto_client",
     "validate_call_params",

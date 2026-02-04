@@ -5,13 +5,13 @@ from dataclasses import dataclass, fields
 from datetime import datetime
 
 
-def is_empty_or_valid(
+def is_valid_against_reference(
     candidate: object | None,
     reference: object,
     validator: Callable[..., bool],
 ) -> bool:
-    """Check if 'candidate' is falsy or whether it passes the 'validator' check against 'reference'."""
-    return not candidate or validator(candidate, reference)
+    """Check if 'reference' is falsy or whether it passes the 'validator' check against 'reference'."""
+    return not reference or validator(candidate, reference)
 
 
 def parse_timestamp_str_if_set(timestamp_str: str) -> datetime | None:
@@ -82,9 +82,9 @@ class TimeRange:
         bool
             True if the timestamp is within the range, False otherwise
         """
-        return is_empty_or_valid(
+        return is_valid_against_reference(
             timestamp, self.start, datetime.__ge__
-        ) and is_empty_or_valid(timestamp, self.end, datetime.__le__)
+        ) and is_valid_against_reference(timestamp, self.end, datetime.__le__)
 
     def is_timestamp_str_in_range(self, timestamp_str: str) -> bool:
         """Check if a timestamp string is within the time range.
