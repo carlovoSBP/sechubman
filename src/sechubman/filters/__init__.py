@@ -10,6 +10,7 @@ from .filters_interface import (
     Criterion,
     Filter,
 )
+from .number import NumberComparisons, NumberCriterion, NumberFilter
 from .string import StringComparisons, StringCriterion, StringFilter
 
 __all__ = [
@@ -18,6 +19,9 @@ __all__ = [
     "DateCriterion",
     "DateFilter",
     "Filter",
+    "NumberComparisons",
+    "NumberCriterion",
+    "NumberFilter",
     "StringComparisons",
     "StringCriterion",
     "StringFilter",

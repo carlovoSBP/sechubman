@@ -7,12 +7,14 @@ from sechubman.utils import are_keys_in_dataclass_fields
 
 from .date import DateFilter
 from .filters_interface import Filter
+from .number import NumberFilter
 from .string import StringFilter
 
 
 class AllFilters(Enum):
     """Enum representing all available AwsSecurityFindingFilters types."""
 
+    NUMBER_FILTERS = NumberFilter
     DATE_FILTERS = DateFilter
     STRING_FILTERS = StringFilter
 

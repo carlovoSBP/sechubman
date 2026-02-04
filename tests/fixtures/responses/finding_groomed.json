@@ -25,5 +25,7 @@
     ],
     "Types": [
         "Software and Configuration Checks/Industry and Regulatory Standards/AWS-Foundational-Security-Best-Practices"
-    ]
+    ],
+    "Confidence": 42,
+    "Criticality": 5
 }

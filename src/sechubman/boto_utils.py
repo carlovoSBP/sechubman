@@ -15,7 +15,7 @@ def get_values_by_boto_argument(finding: dict, name: str) -> list[str]:
     Some arguments in:
     https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/securityhub/client/get_findings.html
     do not directly map to finding fields as per:
-    https://docs.amazonaws.cn/en_us/securityhub/latest/userguide/securityhub-findings-format.html
+    https://docs.aws.amazon.com/securityhub/latest/userguide/securityhub-findings-format.html
     Therefore, this method handles those special cases.
     The method returns a list of strings to handle both single-value and multi-value fields.
 

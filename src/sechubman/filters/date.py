@@ -61,7 +61,7 @@ class DateCriterion(Criterion):
 
 
 @dataclass
-class DateFilter(Filter[DateCriterion]):
+class DateFilter(Filter[str, DateCriterion]):
     """Dataclass representing a SecurityHub DateFilter to be applied on a single finding attribute."""
 
     criterion_type: ClassVar[type] = DateCriterion

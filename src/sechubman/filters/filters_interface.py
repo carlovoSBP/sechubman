@@ -5,9 +5,11 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from typing import TypeVar
 
+TInput = TypeVar("TInput")
+
 
 @dataclass
-class Criterion(ABC):
+class Criterion[TInput](ABC):
     """Abstract base class for AWS Security Finding Filter criterion.
 
     Criterions are the individual filter conditions that make up a Filter.
@@ -18,12 +20,12 @@ class Criterion(ABC):
         """Post-initialization must parse criterion-specific input parameters."""
 
     @abstractmethod
-    def match(self, finding_value: str) -> bool:
+    def match(self, finding_value: TInput) -> bool:
         """Check if a finding value matches this criterion.
 
         Parameters
         ----------
-        finding_value : str
+        finding_value : TInput
             The value from the finding to compare against the criterion
 
         Returns
@@ -37,7 +39,7 @@ TFilter = TypeVar("TFilter", bound=Criterion)
 
 
 @dataclass
-class Filter[TFilter: Criterion](ABC):
+class Filter[TInput, TFilter: Criterion](ABC):
     """Abstract base class for an AWS Security Finding Filter.
 
     A Filter is made up of one or more single-typed Criterions combined with a logical operation
@@ -53,14 +55,14 @@ class Filter[TFilter: Criterion](ABC):
     def criterion_type(self) -> type:
         """The type of criterion this class relates to."""
 
-    def match(self, finding_value: str) -> bool:
+    def match(self, finding_value: TInput) -> bool:
         """
         Check if a finding value matches the filter's criterions.
 
         Parameters
         ----------
-        finding_value : str
-            The value string from the finding to compare against the criterions
+        finding_value : TInput
+            The value from the finding to compare against the criterions
 
         Returns
         -------

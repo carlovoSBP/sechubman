@@ -18,6 +18,12 @@
 
 ::: sechubman.filters.DateFilter
 
+::: sechubman.filters.NumberComparisons
+
+::: sechubman.filters.NumberCriterion
+
+::: sechubman.filters.NumberFilter
+
 ## Factory utilities
 
 ### Public functions

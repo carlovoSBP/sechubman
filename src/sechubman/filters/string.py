@@ -63,7 +63,7 @@ class StringCriterion(Criterion):
 
 
 @dataclass
-class StringFilter(Filter[StringCriterion]):
+class StringFilter(Filter[str, StringCriterion]):
     """Dataclass representing a SecurityHub StringFilter to be applied on a single finding attribute."""
 
     criterion_type: ClassVar[type] = StringCriterion

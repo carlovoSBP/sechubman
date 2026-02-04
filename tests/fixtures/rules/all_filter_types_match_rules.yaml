@@ -32,6 +32,11 @@ Rules:
     - DateRange:
         Unit: DAYS
         Value: 100
+    Confidence:
+    - Eq: 42.0
+    Criticality:
+    - Gte: 0.0
+      Lt: 9.0
   UpdatesToFilteredFindings:
     Workflow:
       Status: SUPPRESSED

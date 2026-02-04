@@ -85,3 +85,13 @@ Rules:
     Note:
       Text: Test
       UpdatedBy: sechubman
+- Filters:
+    Criticality:
+    - Gt: 1.0
+      Lte: 4.0
+  UpdatesToFilteredFindings:
+    Workflow:
+      Status: SUPPRESSED
+    Note:
+      Text: Test
+      UpdatedBy: sechubman
