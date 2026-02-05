@@ -32,5 +32,12 @@
         "Product": 5,
         "Label": "MEDIUM",
         "Normalized": 50
-    }
+    },
+    "ProductFields": {
+        "API": "DeleteTrail"
+    },
+    "UserDefinedFields": {
+        "checked": "yes",
+        "important": "no"
+}
 }

@@ -24,6 +24,12 @@
 
 ::: sechubman.filters.NumberFilter
 
+::: sechubman.filters.MapStringComparisons
+
+::: sechubman.filters.MapCriterion
+
+::: sechubman.filters.MapFilter
+
 ## Factory utilities
 
 ### Public functions

@@ -7,6 +7,7 @@ from sechubman.utils import are_keys_in_dataclass_fields
 
 from .date import DateFilter
 from .filters_interface import Filter
+from .map import MapFilter
 from .number import NumberFilter
 from .string import StringFilter
 
@@ -17,6 +18,7 @@ class AllFilters(Enum):
     NUMBER_FILTERS = NumberFilter
     DATE_FILTERS = DateFilter
     STRING_FILTERS = StringFilter
+    MAP_FILTERS = MapFilter
 
 
 def match_to_filter_type(

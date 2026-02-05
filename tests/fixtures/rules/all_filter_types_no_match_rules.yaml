@@ -70,3 +70,28 @@ Rules:
     Note:
       Text: Test
       UpdatedBy: sechubman
+- Filters:
+    UserDefinedFields:
+    - Key: API
+      Value: CreateTrail
+      Comparison: EQUALS
+  UpdatesToFilteredFindings:
+    Workflow:
+      Status: SUPPRESSED
+    Note:
+      Text: Test
+      UpdatedBy: sechubman
+- Filters:
+    UserDefinedFields:
+    - Key: important
+      Value: "no"
+      Comparison: NOT_EQUALS
+    - Key: checked
+      Value: "no"
+      Comparison: NOT_EQUALS
+  UpdatesToFilteredFindings:
+    Workflow:
+      Status: SUPPRESSED
+    Note:
+      Text: Test
+      UpdatedBy: sechubman

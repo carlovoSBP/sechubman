@@ -33,6 +33,20 @@ Rules:
     SeverityLabel:
     - Value: MEDIUM
       Comparison: EQUALS
+    ProductFields:
+    - Key: API
+      Value: DeleteTrail
+      Comparison: EQUALS
+    - Key: API
+      Value: CreateTrail
+      Comparison: EQUALS
+    UserDefinedFields:
+    - Key: important
+      Value: "yes"
+      Comparison: EQUALS
+    - Key: checked
+      Value: "yes"
+      Comparison: EQUALS
   UpdatesToFilteredFindings:
     Workflow:
       Status: SUPPRESSED
