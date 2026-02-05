@@ -33,6 +33,16 @@ def get_values_by_boto_argument(finding: dict, name: str) -> list[str]:
     """
     if name == "Type":
         return finding.get("Types", [])
+    if name == "SeverityProduct":
+        severity_product = finding.get("Severity", {}).get("Product")
+        return [severity_product] if severity_product is not None else []
+    if name == "SeverityNormalized":
+        severity_normalized = finding.get("Severity", {}).get("Normalized")
+        return [severity_normalized] if severity_normalized is not None else []
+    if name == "SeverityLabel":
+        severity_label = finding.get("Severity", {}).get("Label")
+        return [severity_label] if severity_label is not None else []
+
     return [finding[name]] if name in finding else []
 
 

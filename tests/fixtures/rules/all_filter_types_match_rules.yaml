@@ -37,6 +37,9 @@ Rules:
     Criticality:
     - Gte: 0.0
       Lt: 9.0
+    SeverityLabel:
+    - Value: MEDIUM
+      Comparison: EQUALS
   UpdatesToFilteredFindings:
     Workflow:
       Status: SUPPRESSED

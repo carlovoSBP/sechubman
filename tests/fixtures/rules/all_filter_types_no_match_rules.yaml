@@ -95,3 +95,12 @@ Rules:
     Note:
       Text: Test
       UpdatedBy: sechubman
+- Filters:
+    SeverityNormalized:
+    - Lte: 5.0
+  UpdatesToFilteredFindings:
+    Workflow:
+      Status: SUPPRESSED
+    Note:
+      Text: Test
+      UpdatedBy: sechubman

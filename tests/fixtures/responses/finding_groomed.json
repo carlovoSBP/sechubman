@@ -27,5 +27,10 @@
         "Software and Configuration Checks/Industry and Regulatory Standards/AWS-Foundational-Security-Best-Practices"
     ],
     "Confidence": 42,
-    "Criticality": 5
+    "Criticality": 5,
+    "Severity": {
+        "Product": 5,
+        "Label": "MEDIUM",
+        "Normalized": 50
+    }
 }
