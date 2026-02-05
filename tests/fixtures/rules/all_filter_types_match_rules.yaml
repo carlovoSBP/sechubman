@@ -10,21 +10,14 @@ Rules:
       Comparison: PREFIX
     - Value: arn:aws:config
       Comparison: PREFIX
-    Title:
-    - Value: bucket
-      Comparison: CONTAINS
-    - Value: instance
-      Comparison: CONTAINS
     Description:
     - Value: experimental
       Comparison: NOT_EQUALS
     - Value: CIS
       Comparison: PREFIX_NOT_EQUALS
-    - Value: deprecated
-      Comparison: NOT_CONTAINS
     Type:
-    - Value: AWS-Foundational-Security
-      Comparison: CONTAINS
+    - Value: Software and Configuration Checks
+      Comparison: PREFIX
     CreatedAt:
     - Start: "2024-12-09T08:53:43.702Z"
       End: "2026-12-09T08:53:43.702Z"

@@ -5,8 +5,6 @@ Rules:
       Comparison: EQUALS
     - Value: arn:aws:securityhub:eu-central-1
       Comparison: PREFIX
-    - Value: CIS
-      Comparison: CONTAINS
   UpdatesToFilteredFindings:
     Workflow:
       Status: SUPPRESSED
@@ -27,38 +25,6 @@ Rules:
     Title:
     - Value: S3.8
       Comparison: PREFIX_NOT_EQUALS
-  UpdatesToFilteredFindings:
-    Workflow:
-      Status: SUPPRESSED
-    Note:
-      Text: Test
-      UpdatedBy: sechubman
-- Filters:
-    Description:
-    - Value: instance
-      Comparison: NOT_CONTAINS
-    - Value: bucket
-      Comparison: NOT_CONTAINS
-  UpdatesToFilteredFindings:
-    Workflow:
-      Status: SUPPRESSED
-    Note:
-      Text: Test
-      UpdatedBy: sechubman
-- Filters:
-    Region:
-    - Value: missing
-      Comparison: CONTAINS
-  UpdatesToFilteredFindings:
-    Workflow:
-      Status: SUPPRESSED
-    Note:
-      Text: Test
-      UpdatedBy: sechubman
-- Filters:
-    Type:
-    - Value: CIS AWS Foundations-
-      Comparison: CONTAINS
   UpdatesToFilteredFindings:
     Workflow:
       Status: SUPPRESSED

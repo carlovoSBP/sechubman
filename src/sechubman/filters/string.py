@@ -12,19 +12,13 @@ def _str_prefix_ne_func(a: str, b: str) -> bool:
     return not str.startswith(a, b)
 
 
-def _str_not_contains_func(a: str, b: str) -> bool:
-    return not str.__contains__(a, b)
-
-
 class StringComparisons(Enum):
     """The available string comparison operations linked to their functions."""
 
     EQUALS = partial(str.__eq__)
     PREFIX = partial(str.startswith)
-    CONTAINS = partial(str.__contains__)
     NOT_EQUALS = partial(str.__ne__)
     PREFIX_NOT_EQUALS = partial(_str_prefix_ne_func)
-    NOT_CONTAINS = partial(_str_not_contains_func)
 
 
 @dataclass
