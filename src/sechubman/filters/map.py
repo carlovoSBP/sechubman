@@ -5,7 +5,8 @@ from enum import Enum
 from functools import partial
 from typing import ClassVar
 
-from .filters_interface import Criterion, Filter
+from .filters_interface import Filter
+from .string import _get_combined_comparison, _StringLikeCriterion
 
 
 class MapStringComparisons(Enum):
@@ -16,7 +17,7 @@ class MapStringComparisons(Enum):
 
 
 @dataclass
-class MapCriterion(Criterion):
+class MapCriterion(_StringLikeCriterion):
     """Dataclass representing a SecurityHub Map Criterion.
 
     Parameters
@@ -29,9 +30,7 @@ class MapCriterion(Criterion):
         The value to compare against
     """
 
-    Comparison: str
     Key: str
-    Value: str
 
     def __post_init__(self) -> None:
         """Get the comparison function based on the Comparison attribute."""
@@ -68,16 +67,4 @@ class MapFilter(Filter[dict[str, str], MapCriterion]):
         All criterions must be either positive or negative.
         Raise ValueError if mixed criterions are found.
         """
-        negatives = tuple(
-            "NOT" in criterion.Comparison for criterion in self.criterions
-        )
-        if not any(negatives):
-            self.combined_comparison = any
-        elif all(negatives):
-            self.combined_comparison = all
-        else:
-            msg = """
-                Mixed positive and negative map criterions are not supported:
-                https://docs.aws.amazon.com/securityhub/1.0/APIReference/API_MapFilter.html
-                """
-            raise ValueError(msg)
+        self.combined_comparison = _get_combined_comparison(self.criterions)

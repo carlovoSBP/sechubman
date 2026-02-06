@@ -1,5 +1,6 @@
 """AWS SecurityHub Finding String Filters."""
 
+from collections.abc import Callable
 from dataclasses import dataclass
 from enum import Enum
 from functools import partial
@@ -22,8 +23,8 @@ class StringComparisons(Enum):
 
 
 @dataclass
-class StringCriterion(Criterion):
-    """Dataclass representing a SecurityHub String Criterion.
+class _StringLikeCriterion(Criterion):
+    """Dataclass representing a SecurityHub StringLike Criterion.
 
     Parameters
     ----------
@@ -35,6 +36,19 @@ class StringCriterion(Criterion):
 
     Comparison: str
     Value: str
+
+
+@dataclass
+class StringCriterion(_StringLikeCriterion):
+    """Dataclass representing a SecurityHub String Criterion.
+
+    Parameters
+    ----------
+    Comparison : str
+        The comparison operation to use
+    Value : str
+        The value to compare against
+    """
 
     def __post_init__(self) -> None:
         """Get the comparison function based on the Comparison attribute."""
@@ -56,6 +70,20 @@ class StringCriterion(Criterion):
         return self.comparison_func(finding_value, self.Value)
 
 
+def _get_combined_comparison(criterions: tuple[_StringLikeCriterion, ...]) -> Callable:
+    negatives = tuple("NOT" in criterion.Comparison for criterion in criterions)
+    if not any(negatives):
+        return any
+    if all(negatives):
+        return all
+    msg = """
+            Mixed positive and negative string/map criterions are not supported:
+            https://docs.aws.amazon.com/securityhub/1.0/APIReference/API_StringFilter.html
+            https://docs.aws.amazon.com/securityhub/1.0/APIReference/API_MapFilter.html
+            """
+    raise ValueError(msg)
+
+
 @dataclass
 class StringFilter(Filter[str, StringCriterion]):
     """Dataclass representing a SecurityHub StringFilter to be applied on a single finding attribute."""
@@ -69,16 +97,4 @@ class StringFilter(Filter[str, StringCriterion]):
         All criterions must be either positive or negative.
         Raise ValueError if mixed criterions are found.
         """
-        negatives = tuple(
-            "NOT" in criterion.Comparison for criterion in self.criterions
-        )
-        if not any(negatives):
-            self.combined_comparison = any
-        elif all(negatives):
-            self.combined_comparison = all
-        else:
-            msg = """
-                Mixed positive and negative string criterions are not supported:
-                https://docs.aws.amazon.com/securityhub/1.0/APIReference/API_StringFilter.html
-                """
-            raise ValueError(msg)
+        self.combined_comparison = _get_combined_comparison(self.criterions)
