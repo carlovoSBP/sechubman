@@ -47,6 +47,11 @@ Rules:
     - Key: checked
       Value: "yes"
       Comparison: EQUALS
+    ComplianceSecurityControlParametersValue:
+    - Value: letmein
+      Comparison: EQUALS
+    - Value: root
+      Comparison: EQUALS
   UpdatesToFilteredFindings:
     Workflow:
       Status: SUPPRESSED

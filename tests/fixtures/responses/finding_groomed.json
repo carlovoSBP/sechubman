@@ -39,5 +39,25 @@
     "UserDefinedFields": {
         "checked": "yes",
         "important": "no"
-}
+    },
+    "Compliance": {
+        "SecurityControlParameters": [
+            {
+                "Name": "rainbowPasswords",
+                "Value": [
+                    "password",
+                    "123456",
+                    "admin"
+                ]
+            },
+            {
+                "Name": "rainbowAdmins",
+                "Value": [
+                    "admin",
+                    "root",
+                    "superuser"
+                ]
+            }
+        ]
+    }
 }

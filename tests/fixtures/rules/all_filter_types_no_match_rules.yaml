@@ -95,3 +95,13 @@ Rules:
     Note:
       Text: Test
       UpdatedBy: sechubman
+- Filters:
+    ComplianceSecurityControlParametersValue:
+    - Value: letmein
+      Comparison: EQUALS
+  UpdatesToFilteredFindings:
+    Workflow:
+      Status: SUPPRESSED
+    Note:
+      Text: Test
+      UpdatedBy: sechubman
