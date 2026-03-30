@@ -14,7 +14,11 @@ from sechubman import (
     validate_filters,
     validate_updates,
 )
-from sechubman.boto_utils import BotoStubCall, stub_boto_client
+from sechubman.boto_utils import (
+    BotoStubCall,
+    get_values_by_boto_argument,
+    stub_boto_client,
+)
 
 os.environ["AWS_DEFAULT_REGION"] = "eu-west-1"
 # Not strictly needed, but speeds up boto client creation
@@ -80,6 +84,38 @@ class TestValidateUpdates(TestCase):
             validate_updates,
             BROKEN_RULES[0]["UpdatesToFilteredFindings"],
         )
+
+
+class TestGetValuesByBotoArgument(TestCase):
+    def test_regular_field_returns_single_value(self):
+        finding = {"Title": "Some title"}
+        self.assertEqual(get_values_by_boto_argument(finding, "Title"), ["Some title"])
+
+    def test_regular_missing_field_returns_empty_list(self):
+        finding = {"Title": "Some title"}
+        self.assertEqual(get_values_by_boto_argument(finding, "Description"), [])
+
+    def test_special_case_nested_list_path(self):
+        finding = {
+            "Resources": [
+                {"Id": "res-1", "Type": "AwsS3Bucket"},
+                {"Id": "res-2", "Type": "AwsEc2Instance"},
+            ]
+        }
+        self.assertEqual(
+            get_values_by_boto_argument(finding, "ResourceId"),
+            ["res-1", "res-2"],
+        )
+
+    def test_special_case_ignores_missing_and_none_values(self):
+        finding = {
+            "Resources": [
+                {"Id": "res-1"},
+                {"Id": None},
+                {},
+            ]
+        }
+        self.assertEqual(get_values_by_boto_argument(finding, "ResourceId"), ["res-1"])
 
 
 class TestRuleDataclass(TestCase):

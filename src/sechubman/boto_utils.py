@@ -82,20 +82,31 @@ SPECIAL_CASES = {
 }
 
 
-def _get_values_by_path(finding: dict, path: str) -> list[Any]:
+def _split_path(path: str) -> tuple[tuple[str, bool], ...]:
+    """Parse a dot path into (key, expand_list) path segments."""
+    return tuple(
+        (segment[:-2], True) if segment.endswith("[]") else (segment, False)
+        for segment in path.split(".")
+    )
+
+
+SPECIAL_CASE_PATHS: dict[str, tuple[tuple[str, bool], ...]] = {
+    name: _split_path(path) for name, path in SPECIAL_CASES.items()
+}
+
+
+def _get_values_by_path(
+    finding: dict,
+    path: tuple[tuple[str, bool], ...],
+) -> list[Any]:
     """Resolve a simple dot-path with optional [] list traversal markers."""
-
-    def as_list(value: object) -> list[Any]:
-        return value if isinstance(value, list) else [value]
-
     nodes: list[Any] = [finding]
-    for segment in path.split("."):
-        expand_list = segment.endswith("[]")
-        key = segment[:-2] if expand_list else segment
+    for key, expand_list in path:
         next_nodes: list[Any] = []
 
         for node in nodes:
-            for candidate in as_list(node):
+            candidates = node if isinstance(node, list) else [node]
+            for candidate in candidates:
                 if not isinstance(candidate, dict):
                     continue
                 value = candidate.get(key)
@@ -103,7 +114,10 @@ def _get_values_by_path(finding: dict, path: str) -> list[Any]:
                     continue
 
                 if expand_list:
-                    next_nodes.extend(as_list(value))
+                    if isinstance(value, list):
+                        next_nodes.extend(value)
+                    else:
+                        next_nodes.append(value)
                 else:
                     next_nodes.append(value)
 
@@ -114,7 +128,7 @@ def _get_values_by_path(finding: dict, path: str) -> list[Any]:
     return [node for node in nodes if node is not None]
 
 
-def get_values_by_boto_argument(finding: dict, name: str) -> list[str]:
+def get_values_by_boto_argument(finding: dict, name: str) -> list[Any]:
     """Get the values in a finding for a given boto argument name.
 
     Some arguments in:
@@ -122,7 +136,7 @@ def get_values_by_boto_argument(finding: dict, name: str) -> list[str]:
     do not directly map to finding fields as per:
     https://docs.aws.amazon.com/securityhub/latest/userguide/securityhub-findings-format.html
     Therefore, this method handles those special cases.
-    The method returns a list of strings to handle both single-value and multi-value fields.
+    The method returns a list to handle both single-value and multi-value fields.
 
     Parameters
     ----------
@@ -133,11 +147,12 @@ def get_values_by_boto_argument(finding: dict, name: str) -> list[str]:
 
     Returns
     -------
-    list[str]
+    list[Any]
         The values from the finding for the given name
     """
-    if name in SPECIAL_CASES:
-        return _get_values_by_path(finding, SPECIAL_CASES[name])
+    path = SPECIAL_CASE_PATHS.get(name)
+    if path is not None:
+        return _get_values_by_path(finding, path)
 
     return [finding[name]] if name in finding else []
 
