@@ -1,5 +1,6 @@
 """SecurityHub-related functionality for sechubman."""
 
+from .cidr import CidrCriterion, CidrFilter
 from .date import DateCriterion, DateFilter
 from .filters_factory import (
     AllFilters,
@@ -16,6 +17,8 @@ from .string import StringComparisons, StringCriterion, StringFilter
 
 __all__ = [
     "AllFilters",
+    "CidrCriterion",
+    "CidrFilter",
     "Criterion",
     "DateCriterion",
     "DateFilter",

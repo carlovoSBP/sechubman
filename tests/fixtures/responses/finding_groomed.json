@@ -21,6 +21,25 @@
             },
             "Region": "eu-west-1",
             "Id": "arn:aws:s3:::test-sechubman"
+        },
+        {
+            "Partition": "aws",
+            "Type": "AwsEc2Instance",
+            "Details": {
+                "AwsEc2Instance": {
+                    "KeyName": "prod-key",
+                    "Type": "t3.medium",
+                    "VpcId": "vpc-42r0u35ytgnb9853g",
+                    "ImageId": "ami-24f08y4gb09u42fg09j",
+                    "IpV4Addresses": [
+                        "10.12.34.56",
+                        "10.34.56.12",
+                        "10.56.12.34"
+                    ]
+                }
+            },
+            "Region": "eu-west-1",
+            "Id": "arn:aws:ec2:eu-west-1:123456789012:instance/i-4t098yu35g909"
         }
     ],
     "Types": [

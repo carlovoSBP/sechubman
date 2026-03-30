@@ -30,6 +30,10 @@
 
 ::: sechubman.filters.MapFilter
 
+::: sechubman.filters.CidrCriterion
+
+::: sechubman.filters.CidrFilter
+
 ## Factory utilities
 
 ### Public functions

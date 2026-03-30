@@ -105,3 +105,12 @@ Rules:
     Note:
       Text: Test
       UpdatedBy: sechubman
+- Filters:
+    ResourceAwsEc2InstanceIpV4Addresses:
+    - Cidr: 10.65.43.21
+  UpdatesToFilteredFindings:
+    Workflow:
+      Status: SUPPRESSED
+    Note:
+      Text: Test
+      UpdatedBy: sechubman

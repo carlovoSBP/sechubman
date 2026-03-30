@@ -52,6 +52,8 @@ Rules:
       Comparison: EQUALS
     - Value: root
       Comparison: EQUALS
+    ResourceAwsEc2InstanceIpV4Addresses:
+    - Cidr: 10.34.56.12
   UpdatesToFilteredFindings:
     Workflow:
       Status: SUPPRESSED

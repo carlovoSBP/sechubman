@@ -32,6 +32,7 @@ SPECIAL_CASES = {
     "ThreatIntelIndicatorSource": "ThreatIntelIndicators[].Source",
     "ThreatIntelIndicatorSourceUrl": "ThreatIntelIndicators[].SourceUrl",
     # resource block todo
+    "ResourceAwsEc2InstanceIpV4Addresses": "Resources[].Details.AwsEc2Instance.IpV4Addresses[]",
     "ComplianceStatus": "Compliance.Status",
     "WorkflowStatus": "Workflow.Status",
     "RelatedFindingsProductArn": "RelatedFindings[].ProductArn",

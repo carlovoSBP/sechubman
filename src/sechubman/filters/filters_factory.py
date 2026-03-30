@@ -5,6 +5,7 @@ from typing import Any
 
 from sechubman.utils import are_keys_in_dataclass_fields
 
+from .cidr import CidrFilter
 from .date import DateFilter
 from .filters_interface import Filter
 from .map import MapFilter
@@ -19,6 +20,7 @@ class AllFilters(Enum):
     DATE_FILTERS = DateFilter
     STRING_FILTERS = StringFilter
     MAP_FILTERS = MapFilter
+    CIDR_FILTERS = CidrFilter
 
 
 def match_to_filter_type(

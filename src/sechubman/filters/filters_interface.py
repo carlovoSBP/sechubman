@@ -16,10 +16,6 @@ class Criterion[TInput](ABC):
     """
 
     @abstractmethod
-    def __post_init__(self) -> None:
-        """Post-initialization must parse criterion-specific input parameters."""
-
-    @abstractmethod
     def match(self, finding_value: TInput) -> bool:
         """Check if a finding value matches this criterion.
 

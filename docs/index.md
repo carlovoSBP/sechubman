@@ -17,6 +17,7 @@ Some quirks about the API worth mentioning for the usability of this library:
   Compare [the API specs](https://docs.aws.amazon.com/securityhub/1.0/APIReference/API_GetFindings.html#API_GetFindings_RequestBody)
   with [the finding specs](https://docs.aws.amazon.com/securityhub/latest/userguide/securityhub-findings-format.html)
   for more details.
+- The `Cidr` attribute of the [IpFilter](https://docs.aws.amazon.com/securityhub/1.0/APIReference/API_IpFilter.html) works like a [StringFilter](https://docs.aws.amazon.com/securityhub/1.0/APIReference/API_StringFilter.html) with `Value` set to the value for `Cidr` and `Comparison` set to `EQUALS`.
 
 ## Example usage
 
