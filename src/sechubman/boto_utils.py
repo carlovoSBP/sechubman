@@ -95,37 +95,34 @@ SPECIAL_CASE_PATHS: dict[str, tuple[tuple[str, bool], ...]] = {
 }
 
 
-def _get_values_by_path(
-    finding: dict,
+def _get_values_recursively(
+    finding_parts: list[Any],
     path: tuple[tuple[str, bool], ...],
-) -> list[Any]:
-    """Resolve a simple dot-path with optional [] list traversal markers."""
-    nodes: list[Any] = [finding]
-    for key, expand_list in path:
-        next_nodes: list[Any] = []
+) -> Generator[Any, None, None]:
+    """Resolve a special case path recursively and yield the values at the end of the full path."""
+    if not path:
+        yield from finding_parts
+        return  # Base case: if the path is empty, yield the current finding parts, then return to stop further processing
 
-        for node in nodes:
-            candidates = node if isinstance(node, list) else [node]
-            for candidate in candidates:
-                if not isinstance(candidate, dict):
-                    continue
-                value = candidate.get(key)
-                if value is None:
-                    continue
+    path_key, is_list = path[0]
 
-                if expand_list:
-                    if isinstance(value, list):
-                        next_nodes.extend(value)
-                    else:
-                        next_nodes.append(value)
-                else:
-                    next_nodes.append(value)
-
-        nodes = next_nodes
-        if not nodes:
-            break
-
-    return [node for node in nodes if node is not None]
+    for part in finding_parts:
+        # We should only continue traversing if the current part is a dict
+        # Otherwise something is off and we should simply error out by trying to access it like a dict and letting the exception propagate
+        candidate = part.get(path_key)
+        if candidate is None:
+            continue
+        if isinstance(candidate, list):
+            if not is_list:
+                message = f"Path segment {path_key} is not marked as list, but value is a list: {candidate}"
+                raise ValueError(message)
+            for item in candidate:
+                yield from _get_values_recursively([item], path[1:])
+        else:
+            if is_list:
+                message = f"Path segment {path_key} is marked as list, but value is not a list: {candidate}"
+                raise ValueError(message)
+            yield from _get_values_recursively([candidate], path[1:])
 
 
 def get_values_by_boto_argument(finding: dict, name: str) -> list[Any]:
@@ -152,9 +149,13 @@ def get_values_by_boto_argument(finding: dict, name: str) -> list[Any]:
     """
     path = SPECIAL_CASE_PATHS.get(name)
     if path is not None:
-        return _get_values_by_path(finding, path)
+        results = list(_get_values_recursively([finding], path))
+    else:
+        results = [finding[name]] if name in finding else []
 
-    return [finding[name]] if name in finding else []
+    # Filter out empty values,
+    # because it is more intuitive to return an empty list if there are no valid values than to return a list with for example empty dicts
+    return [result for result in results if result]
 
 
 @dataclass
@@ -197,8 +198,8 @@ def stub_boto_client(
     ----------
     boto_session_client : BaseClient
         The boto session BaseClient that will be stubbed
-    calls : list[botoStubCall]
-        The list of botoStubCall instances representing the calls to add to the stubber
+    calls : list[BotoStubCall]
+        The list of BotoStubCall instances representing the calls to add to the stubber
 
     Yields
     ------

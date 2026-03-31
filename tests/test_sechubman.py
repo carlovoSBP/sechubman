@@ -117,6 +117,22 @@ class TestGetValuesByBotoArgument(TestCase):
         }
         self.assertEqual(get_values_by_boto_argument(finding, "ResourceId"), ["res-1"])
 
+    def test_empty_tags(self):
+        finding = {"Tags": {}}
+        self.assertEqual(get_values_by_boto_argument(finding, "Tags"), [])
+
+    def test_empty_resource_tags(self):
+        finding = {
+            "Resources": [
+                {"Tags": {}},
+            ]
+        }
+        self.assertEqual(get_values_by_boto_argument(finding, "ResourceTags"), [])
+
+    def test_empty_types(self):
+        finding = {"Types": []}
+        self.assertEqual(get_values_by_boto_argument(finding, "Type"), [])
+
 
 class TestRuleDataclass(TestCase):
     def setUp(self):
