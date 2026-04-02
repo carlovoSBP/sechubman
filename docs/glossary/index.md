@@ -9,3 +9,5 @@
 ## Public classes
 
 ::: sechubman.Rule
+
+::: sechubman.Manager

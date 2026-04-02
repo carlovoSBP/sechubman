@@ -52,6 +52,58 @@ with Path("rules.yaml").open() as file:
 
 client = boto3.client("securityhub")
 
-rule = Rule(boto_securityhub_client=client, **rules[0])
-rule.apply()
+rule = Rule(**rules[0], client=client)
+rule.get_and_update()
+```
+
+### Condensing big rule sets with a lot of input overlap
+
+```yaml
+ManagerConfig:
+  DefaultRuleInput:
+    Filters:
+      WorkflowStatus:
+      - Value: NEW
+        Comparison: EQUALS
+      - Value: NOTIFIED
+        Comparison: EQUALS
+    UpdatesToFilteredFindings:
+      Workflow:
+        Status: SUPPRESSED
+      Note:
+        UpdatedBy: sechubman
+Rules:
+- Filters:
+    ResourceId:
+    - Value: arn:aws:s3:::test-sechubman
+      Comparison: EQUALS
+  UpdatesToFilteredFindings:
+    Note:
+      Text: Test
+- Filters:
+    ResourceId:
+    - Value: arn:aws:s3:::test-sechubman-2
+      Comparison: EQUALS
+  UpdatesToFilteredFindings:
+    Note:
+      Text: Test-2
+```
+
+```Python
+from pathlib import Path
+
+import boto3
+import yaml
+
+from sechubman import Manager
+
+
+with Path("rules.yaml").open() as file:
+    rules = yaml.safe_load(file)
+
+client = boto3.client("securityhub")
+
+manager = Manager(**rules["ManagerConfig"], client=client)
+manager.set_rules(rules["Rules"])
+manager.get_and_update_all()
 ```

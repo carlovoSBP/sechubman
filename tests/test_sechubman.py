@@ -10,6 +10,7 @@ import yaml
 from botocore.exceptions import ParamValidationError
 
 from sechubman import (
+    Manager,
     Rule,
     validate_filters,
     validate_updates,
@@ -31,6 +32,8 @@ with Path("tests/fixtures/rules/correct_rules.yaml").open() as file:
     CORRECT_RULES = yaml.safe_load(file)["Rules"]
 with Path("tests/fixtures/rules/broken_rules.yaml").open() as file:
     BROKEN_RULES = yaml.safe_load(file)["Rules"]
+with Path("tests/fixtures/rules/condensed_rules.yaml").open() as file:
+    CONDENSED_RULES = yaml.safe_load(file)
 with Path("tests/fixtures/rules/all_filter_types_match_rules.yaml").open() as file:
     ALL_FILTER_TYPES_MATCH_RULES = yaml.safe_load(file)["Rules"]
 with Path("tests/fixtures/rules/all_filter_types_no_match_rules.yaml").open() as file:
@@ -184,6 +187,20 @@ class TestRuleDataclass(TestCase):
             ],
         ):
             self.assertTrue(rule.get_and_update())
+
+    def test_manager_apply(self):
+        manager = Manager(
+            **CONDENSED_RULES["ManagerConfig"], client=SECURITYHUB_SESSION_CLIENT
+        )
+        manager.set_rules(CONDENSED_RULES["Rules"])
+        with stub_boto_client(
+            SECURITYHUB_SESSION_CLIENT,
+            [
+                BotoStubCall("get_findings", FINDINGS, FILTERS),
+                BotoStubCall("batch_update_findings", PROCESSED, UPDATES),
+            ],
+        ):
+            self.assertTrue(manager.get_and_update_all())
 
     def test_apply_unprocessed(self):
         rule = Rule(**CORRECT_RULES[0], client=SECURITYHUB_SESSION_CLIENT)

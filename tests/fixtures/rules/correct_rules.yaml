@@ -6,6 +6,8 @@ Rules:
     WorkflowStatus:
     - Value: NEW
       Comparison: EQUALS
+    - Value: NOTIFIED
+      Comparison: EQUALS
   UpdatesToFilteredFindings:
     Workflow:
       Status: SUPPRESSED

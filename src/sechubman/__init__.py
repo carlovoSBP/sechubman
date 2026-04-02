@@ -6,6 +6,7 @@ from .boto_utils import (
     stub_boto_client,
     validate_call_params,
 )
+from .manager import Manager
 from .rule import Rule
 from .sechubman import validate_filters, validate_updates
 from .utils import (
@@ -18,6 +19,7 @@ from .utils import (
 
 __all__ = [
     "BotoStubCall",
+    "Manager",
     "Rule",
     "TimeRange",
     "are_keys_in_collection",
