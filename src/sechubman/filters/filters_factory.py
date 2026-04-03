@@ -10,6 +10,7 @@ from .date import DateFilter
 from .filters_interface import Filter
 from .map import MapFilter
 from .number import NumberFilter
+from .regex_string import RegexStringFilter
 from .string import StringFilter
 
 
@@ -68,3 +69,38 @@ def create_filters(
             filter_type.criterion_type(**comparison) for comparison in filters_dicts
         )
     )
+
+
+def create_regex_string_filters(
+    regex_string_filters: dict[str, list[str]],
+) -> dict[str, RegexStringFilter]:
+    """Create regex string filters from ExtraFeatures.RegexStringFilters."""
+    if not isinstance(regex_string_filters, dict):
+        msg = "'ExtraFeatures.RegexStringFilters' should be a dictionary"
+        raise TypeError(msg)
+
+    compiled_filters: dict[str, RegexStringFilter] = {}
+    for field_name, patterns in regex_string_filters.items():
+        if not isinstance(field_name, str):
+            msg = "'ExtraFeatures.RegexStringFilters' keys should be strings"
+            raise TypeError(msg)
+        if not isinstance(patterns, list):
+            msg = "Each value in 'ExtraFeatures.RegexStringFilters' should be a list of regex strings"
+            raise TypeError(msg)
+        if not all(isinstance(pattern, str) for pattern in patterns):
+            msg = (
+                "Each pattern in 'ExtraFeatures.RegexStringFilters' should be a string"
+            )
+            raise TypeError(msg)
+
+        criterions = []
+        for pattern in patterns:
+            try:
+                criterions.append(RegexStringFilter.criterion_type(Value=pattern))
+            except ValueError as exc:
+                msg = f"Invalid regex pattern '{pattern}' for '{field_name}': {exc}"
+                raise ValueError(msg) from exc
+
+        compiled_filters[field_name] = RegexStringFilter(criterions=tuple(criterions))
+
+    return compiled_filters

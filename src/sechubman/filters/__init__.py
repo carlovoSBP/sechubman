@@ -5,6 +5,7 @@ from .date import DateCriterion, DateFilter
 from .filters_factory import (
     AllFilters,
     create_filters,
+    create_regex_string_filters,
     match_to_filter_type,
 )
 from .filters_interface import (
@@ -13,6 +14,7 @@ from .filters_interface import (
 )
 from .map import MapCriterion, MapFilter, MapStringComparisons
 from .number import NumberComparisons, NumberCriterion, NumberFilter
+from .regex_string import RegexStringCriterion, RegexStringFilter
 from .string import StringComparisons, StringCriterion, StringFilter
 
 __all__ = [
@@ -29,9 +31,12 @@ __all__ = [
     "NumberComparisons",
     "NumberCriterion",
     "NumberFilter",
+    "RegexStringCriterion",
+    "RegexStringFilter",
     "StringComparisons",
     "StringCriterion",
     "StringFilter",
     "create_filters",
+    "create_regex_string_filters",
     "match_to_filter_type",
 ]

@@ -1,7 +1,7 @@
 """The main domain model of sechubman."""
 
 import logging
-import re
+from collections.abc import Mapping
 from dataclasses import dataclass, field
 from typing import Any
 
@@ -10,7 +10,12 @@ from botocore.client import BaseClient
 from .boto_utils import (
     get_values_by_boto_argument,
 )
-from .filters import Filter, create_filters
+from .filters import (
+    Filter,
+    RegexStringFilter,
+    create_filters,
+    create_regex_string_filters,
+)
 from .sechubman import validate_filters, validate_updates
 
 LOGGER = logging.getLogger(__name__)
@@ -31,8 +36,8 @@ class Rule:
         self._filters = self._create_filters()
         self._regex_string_filters = self._create_regex_string_filters()
 
-    def _create_regex_string_filters(self) -> dict[str, list[re.Pattern[str]]]:
-        """Validate and compile regex string filters from ExtraFeatures."""
+    def _create_regex_string_filters(self) -> dict[str, RegexStringFilter]:
+        """Create regex string filters from ExtraFeatures."""
         if not self.ExtraFeatures:
             return {}
 
@@ -43,33 +48,7 @@ class Rule:
             raise ValueError(msg)
 
         regex_string_filters = self.ExtraFeatures.get("RegexStringFilters", {})
-        if not isinstance(regex_string_filters, dict):
-            msg = "'ExtraFeatures.RegexStringFilters' should be a dictionary"
-            raise TypeError(msg)
-
-        compiled_filters: dict[str, list[re.Pattern[str]]] = {}
-        for field_name, patterns in regex_string_filters.items():
-            if not isinstance(field_name, str):
-                msg = "'ExtraFeatures.RegexStringFilters' keys should be strings"
-                raise TypeError(msg)
-            if not isinstance(patterns, list):
-                msg = "Each value in 'ExtraFeatures.RegexStringFilters' should be a list of regex strings"
-                raise TypeError(msg)
-
-            compiled_patterns: list[re.Pattern[str]] = []
-            for pattern in patterns:
-                if not isinstance(pattern, str):
-                    msg = "Each pattern in 'ExtraFeatures.RegexStringFilters' should be a string"
-                    raise TypeError(msg)
-                try:
-                    compiled_patterns.append(re.compile(pattern))
-                except re.error as exc:
-                    msg = f"Invalid regex pattern '{pattern}' for '{field_name}': {exc}"
-                    raise ValueError(msg) from exc
-
-            compiled_filters[field_name] = compiled_patterns
-
-        return compiled_filters
+        return create_regex_string_filters(regex_string_filters)
 
     def _validate_updates_to_filtered_findings(self) -> None:
         """Validate the UpdatesToFilteredFindings argument.
@@ -108,7 +87,7 @@ class Rule:
 
     def _create_filters(
         self,
-    ) -> dict[str, Filter]:
+    ) -> dict[str, Filter[Any, Any]]:
         """Get the rule's filters as AwsSecurityFindingFilters instances.
 
         Returns
@@ -145,7 +124,7 @@ class Rule:
                     "ProductArn": finding["ProductArn"],
                 }
                 for finding in page["Findings"]
-                if self._match_regex_string_filters(finding)
+                if self._match(finding, self._regex_string_filters)
             ]
 
             if not updates["FindingIdentifiers"]:
@@ -165,15 +144,19 @@ class Rule:
 
         return not any_unprocessed
 
-    def _match_regex_string_filters(self, finding: dict[str, Any]) -> bool:
-        """Check if a finding matches all configured regex string filters."""
+    @staticmethod
+    def _match(
+        finding: dict[str, Any], filters: Mapping[str, Filter[Any, Any]]
+    ) -> bool:
+        """Check if a finding matches the filters."""
         return all(
-            any(
-                isinstance(value, str)
-                and any(pattern.search(value) for pattern in compiled_patterns)
-                for value in get_values_by_boto_argument(finding, filter_name)
+            (
+                any(
+                    aws_security_finding_filters.match(value)
+                    for value in get_values_by_boto_argument(finding, filter_name)
+                )
             )
-            for filter_name, compiled_patterns in self._regex_string_filters.items()
+            for filter_name, aws_security_finding_filters in filters.items()
         )
 
     def match(self, finding: dict) -> bool:
@@ -189,13 +172,6 @@ class Rule:
         bool
             True if the finding matches the rule's filters, False otherwise
         """
-        boto_filters_match = all(
-            (
-                any(
-                    aws_security_finding_filters.match(value)
-                    for value in get_values_by_boto_argument(finding, filter_name)
-                )
-            )
-            for filter_name, aws_security_finding_filters in self._filters.items()
+        return self._match(finding, self._filters) and self._match(
+            finding, self._regex_string_filters
         )
-        return boto_filters_match and self._match_regex_string_filters(finding)
