@@ -60,3 +60,7 @@ Rules:
     Note:
       Text: Test
       UpdatedBy: sechubman
+  ExtraFeatures:
+    RegexStringFilters:
+      ResourceId:
+      - .*test.*

@@ -19,13 +19,19 @@ Some quirks about the API worth mentioning for the usability of this library:
   for more details.
 - The `Cidr` attribute of the [IpFilter](https://docs.aws.amazon.com/securityhub/1.0/APIReference/API_IpFilter.html) works like a [StringFilter](https://docs.aws.amazon.com/securityhub/1.0/APIReference/API_StringFilter.html) with `Value` set to the value for `Cidr` and `Comparison` set to `EQUALS`.
 
+Things worth noting about the library itself.
+
+- To make big rule files a little smaller and more readable rules can be create via a rule manager.
+  The rule manager can have a default config for all rules created by it.
+- Individual rules can still override the defaults set by the manager.
+
 ## Example usage
 
 ```yaml
 Rules:
 - Filters:
-    ResourceId:
-    - Value: arn:aws:s3:::test-sechubman
+    Region:
+    - Value: eu-west-1
       Comparison: EQUALS
     WorkflowStatus:
     - Value: NEW
@@ -36,6 +42,13 @@ Rules:
     Note:
       Text: Test
       UpdatedBy: sechubman
+  ExtraFeatures:
+    RegexStringFilters:
+      ResourceId:
+      - .*-dev$
+      - .*-test$
+      Description:
+      - .*non-critical.*
 ```
 
 ```Python

@@ -11,6 +11,10 @@ ManagerConfig:
         Status: SUPPRESSED
       Note:
         UpdatedBy: sechubman
+    ExtraFeatures:
+      RegexStringFilters:
+        ProductArn:
+        - .*config$
 Rules:
 - Filters:
     ResourceId:
