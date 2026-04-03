@@ -48,7 +48,7 @@ class Rule:
             raise ValueError(msg)
 
         regex_string_filters = self.ExtraFeatures.get("RegexStringFilters", {})
-        return create_regex_string_filters(regex_string_filters)
+        return create_regex_string_filters(regex_string_filters, self.client)
 
     def _validate_updates_to_filtered_findings(self) -> None:
         """Validate the UpdatesToFilteredFindings argument.

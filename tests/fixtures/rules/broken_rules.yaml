@@ -20,3 +20,19 @@ Rules:
     Note:
       Text: Dev account
       UpdatedBy: sechubman
+- Filters:
+    WorkflowStatus:
+    - Value: NEW
+      Comparison: EQUALS
+    - Value: NOTIFIED
+      Comparison: EQUALS
+  UpdatesToFilteredFindings:
+    Workflow:
+      Status: SUPPRESSED
+    Note:
+      Text: Test
+      UpdatedBy: sechubman
+  ExtraFeatures:
+    RegexStringFilters:
+      ResoureId:
+      - .*dev.*

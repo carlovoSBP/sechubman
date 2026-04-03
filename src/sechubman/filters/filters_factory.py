@@ -3,6 +3,9 @@
 from enum import Enum
 from typing import Any
 
+from botocore.client import BaseClient
+
+from sechubman.sechubman import validate_filters
 from sechubman.utils import are_keys_in_dataclass_fields
 
 from .cidr import CidrFilter
@@ -72,7 +75,7 @@ def create_filters(
 
 
 def create_regex_string_filters(
-    regex_string_filters: dict[str, list[str]],
+    regex_string_filters: dict[str, list[str]], client: BaseClient
 ) -> dict[str, RegexStringFilter]:
     """Create regex string filters from ExtraFeatures.RegexStringFilters."""
     if not isinstance(regex_string_filters, dict):
@@ -81,9 +84,10 @@ def create_regex_string_filters(
 
     compiled_filters: dict[str, RegexStringFilter] = {}
     for field_name, patterns in regex_string_filters.items():
-        if not isinstance(field_name, str):
-            msg = "'ExtraFeatures.RegexStringFilters' keys should be strings"
-            raise TypeError(msg)
+        # Validate the regex string filter name with boto3 to ensure they indeed relate to a string-valued field in a finding
+        validate_filters(
+            {field_name: [{"Value": "dummy", "Comparison": "EQUALS"}]}, client
+        )
         if not isinstance(patterns, list):
             msg = "Each value in 'ExtraFeatures.RegexStringFilters' should be a list of regex strings"
             raise TypeError(msg)

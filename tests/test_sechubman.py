@@ -177,6 +177,14 @@ class TestRuleDataclass(TestCase):
             client=SECURITYHUB_SESSION_CLIENT,
         )
 
+    def test_invalid_regex_rule_boto(self):
+        self.assertRaises(
+            ParamValidationError,
+            Rule,
+            **BROKEN_RULES[2],
+            client=SECURITYHUB_SESSION_CLIENT,
+        )
+
     def test_apply(self):
         rule = Rule(**CORRECT_RULES[0], client=SECURITYHUB_SESSION_CLIENT)
         with stub_boto_client(
