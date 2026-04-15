@@ -15,9 +15,9 @@ LOGGER = logging.getLogger(__name__)
 class Manager:
     """Dataclass managing rule creation."""
 
-    DefaultRuleInput: dict[str, Any]
     client: BaseClient
-    rules: list[Rule] = field(default_factory=list)
+    DefaultRuleInput: dict[str, Any] = field(default_factory=dict)
+    _rules: list[Rule] = field(default_factory=list)
 
     def _merge_inputs(
         self,
@@ -50,11 +50,11 @@ class Manager:
         list[Rule]
             A list of Rule instances created from the input.
         """
-        self.rules = []
+        self._rules = []
         for rule_input in rules_input:
             merged_input = self._merge_inputs(self.DefaultRuleInput, rule_input)
-            self.rules.append(Rule(**merged_input, client=self.client))
-        return self.rules
+            self._rules.append(Rule(**merged_input, client=self.client))
+        return self._rules
 
     def get_and_update_all(self) -> bool:
         """Get all the findings matching the rules' filters from AWS SecurityHub and update them according to the rules' updates.
@@ -65,9 +65,47 @@ class Manager:
             True if all findings were processed successfully, False otherwise
         """
         all_success = True
-        for index, rule in enumerate(self.rules):
+        for index, rule in enumerate(self._rules):
             LOGGER.info("Updating findings for rule no. %d", index + 1)
             success = rule.get_and_update()
             if not success:
                 all_success = False
         return all_success
+
+    def match_and_update(self, finding: dict[str, Any]) -> bool:
+        """Match one finding against all configured rules and apply updates for each match.
+
+        Parameters
+        ----------
+        finding : dict[str, Any]
+            The finding to match and update.
+
+        Returns
+        -------
+        bool
+            True if all matching updates were processed, False otherwise.
+        """
+        any_unprocessed = False
+        matched_rules = 0
+
+        for index, rule in enumerate(self._rules):
+            if not rule.match(finding):
+                continue
+
+            matched_rules += 1
+            LOGGER.info("Finding matched rule no. %d", index + 1)
+
+            updates = rule.create_updates_for_finding(finding)
+            response = self.client.batch_update_findings(**updates)
+
+            processed = response["ProcessedFindings"]
+            unprocessed = response["UnprocessedFindings"]
+            LOGGER.info("Number of processed findings: %d", len(processed))
+            if unprocessed:
+                any_unprocessed = True
+                LOGGER.warning("Number of unprocessed findings: %d", len(unprocessed))
+
+        if matched_rules == 0:
+            LOGGER.info("Finding did not match any rules; nothing to update.")
+
+        return not any_unprocessed

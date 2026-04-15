@@ -24,6 +24,13 @@ Things worth noting about the library itself.
 - To make big rule files a little smaller and more readable rules can be create via a rule manager.
   The rule manager can have a default config for all rules created by it.
 - Individual rules can still override the defaults set by the manager.
+- `jsonUpdate` mode enables a more structured way of storing notes.
+  It allows for note preservation from other processes by merging existing JSON formatted note metadata.
+  This is particularly useful when integrating with ticketing systems or when multiple teams manage findings.
+  When a note is empty, this mode will create a new JSON note like: `{"Note":"Suppress SSM.7 findings"}`.
+  Existing notes in plain text (non-JSON-formatted) will be overwritten, the previous note will be captured in the logs.
+  When there is an existing JSON-formatted note, this mode will update only the key it manages in that note like: `{"jiraIssue":"PROJ-123","Note":"Suppress SSM.7 findings"}`.
+  See the code examples below on how to activate it.
 
 ## Example usage
 
@@ -49,6 +56,9 @@ Rules:
       - .*-test$
       Description:
       - .*non-critical.*
+    NoteTextConfig:
+      Mode: jsonUpdate
+      Key: suppressionReason
 ```
 
 ```Python
@@ -85,6 +95,10 @@ ManagerConfig:
         Status: SUPPRESSED
       Note:
         UpdatedBy: sechubman
+  ExtraFeatures:
+    NoteTextConfig:
+      Mode: jsonUpdate
+      Key: suppressionReason
 Rules:
 - Filters:
     ResourceId:
@@ -100,6 +114,9 @@ Rules:
   UpdatesToFilteredFindings:
     Note:
       Text: Test-2
+  ExtraFeatures:
+    NoteTextConfig:
+      Mode: plaintext
 ```
 
 ```Python

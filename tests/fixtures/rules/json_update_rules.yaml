@@ -1,0 +1,18 @@
+Rules:
+- Filters:
+    ResourceId:
+    - Value: arn:aws:s3:::test-sechubman
+      Comparison: EQUALS
+    WorkflowStatus:
+    - Value: NEW
+      Comparison: EQUALS
+    - Value: NOTIFIED
+      Comparison: EQUALS
+  UpdatesToFilteredFindings:
+    Note:
+      Text: Test test
+      UpdatedBy: sechubman
+  ExtraFeatures:
+    NoteTextConfig:
+      Mode: jsonUpdate
+      Key: suppressionReason

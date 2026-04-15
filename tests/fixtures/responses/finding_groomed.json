@@ -81,5 +81,10 @@
     },
     "Workflow": {
         "Status": "NEW"
+    },
+    "Note": {
+        "Text": "{\"jiraIssue\":\"PROJ-123\",\"suppressionReason\":\"override me\"}",
+        "UpdatedBy": "ticketBot",
+        "UpdatedAt": "2023-05-16T01:14:08Z"
     }
 }

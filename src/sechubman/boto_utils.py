@@ -1,5 +1,6 @@
 """Boto-related utilities for sechubman."""
 
+import sys
 from collections.abc import Generator
 from contextlib import contextmanager
 from dataclasses import asdict, dataclass
@@ -215,6 +216,10 @@ def stub_boto_client(
     try:
         yield stubber
     finally:
+        # Preserve the original exception raised inside the context (for example,
+        # boto ParamValidationError) instead of masking it with pending stubs.
+        if sys.exc_info()[0] is None:
+            stubber.assert_no_pending_responses()
         stubber.deactivate()
 
 

@@ -38,6 +38,8 @@ with Path("tests/fixtures/rules/all_filter_types_match_rules.yaml").open() as fi
     ALL_FILTER_TYPES_MATCH_RULES = yaml.safe_load(file)["Rules"]
 with Path("tests/fixtures/rules/all_filter_types_no_match_rules.yaml").open() as file:
     ALL_FILTER_TYPES_NO_MATCH_RULES = yaml.safe_load(file)["Rules"]
+with Path("tests/fixtures/rules/json_update_rules.yaml").open() as file:
+    JSON_RULES = yaml.safe_load(file)["Rules"]
 
 with Path("tests/fixtures/calls/filters.json").open() as file:
     FILTERS = json.load(file)
@@ -51,6 +53,8 @@ with Path("tests/fixtures/responses/processed.json").open() as file:
     PROCESSED = json.load(file)
 with Path("tests/fixtures/responses/unprocessed.json").open() as file:
     UNPROCESSED = json.load(file)
+with Path("tests/fixtures/calls/json_updates.json").open() as file:
+    JSON_UPDATES = json.load(file)
 
 SECURITYHUB_SESSION_CLIENT = botocore.session.get_session().create_client("securityhub")
 
@@ -220,6 +224,28 @@ class TestRuleDataclass(TestCase):
             ],
         ):
             self.assertFalse(rule.get_and_update())
+
+    def test_json_apply(self):
+        rule = Rule(**JSON_RULES[0], client=SECURITYHUB_SESSION_CLIENT)
+        with stub_boto_client(
+            SECURITYHUB_SESSION_CLIENT,
+            [
+                BotoStubCall("get_findings", {"Findings": [FINDING_GROOMED]}, FILTERS),
+                BotoStubCall("batch_update_findings", PROCESSED, JSON_UPDATES),
+            ],
+        ):
+            self.assertTrue(rule.get_and_update())
+
+    def test_manager_json_apply(self):
+        manager = Manager(client=SECURITYHUB_SESSION_CLIENT)
+        manager.set_rules(JSON_RULES)
+        with stub_boto_client(
+            SECURITYHUB_SESSION_CLIENT,
+            [
+                BotoStubCall("batch_update_findings", PROCESSED, JSON_UPDATES),
+            ],
+        ):
+            self.assertTrue(manager.match_and_update(FINDING_GROOMED))
 
     def test_match(self):
         for all_filter_type_match_rule in ALL_FILTER_TYPES_MATCH_RULES:
