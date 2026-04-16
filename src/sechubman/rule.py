@@ -202,6 +202,31 @@ class Rule:
             for filter_name, filters_dicts in self.Filters.items()
         }
 
+    def batch_update_findings(self, updates: dict[str, Any]) -> bool:
+        """Batch update findings in AWS SecurityHub.
+
+        Parameters
+        ----------
+        updates : dict[str, Any]
+            The updates payload for the findings.
+
+        Returns
+        -------
+        bool
+            True if there are unprocessed findings, False otherwise.
+        """
+        response = self.client.batch_update_findings(**updates)
+
+        processed = response["ProcessedFindings"]
+        unprocessed = response["UnprocessedFindings"]
+
+        LOGGER.info("Number of processed findings: %d", len(processed))
+        if unprocessed:
+            LOGGER.warning("Number of unprocessed findings: %d", len(unprocessed))
+            return True
+
+        return False
+
     def get_and_update(self) -> bool:
         """Get all the findings matching the rule's filters from AWS SecurityHub and update them according to the rule's updates.
 
@@ -251,16 +276,7 @@ class Rule:
                 updates_to_apply = [updates]
 
             for updates in updates_to_apply:
-                response = self.client.batch_update_findings(**updates)
-                processed = response["ProcessedFindings"]
-                unprocessed = response["UnprocessedFindings"]
-
-                LOGGER.info("Number of processed findings: %d", len(processed))
-                if unprocessed:
-                    any_unprocessed = True
-                    LOGGER.warning(
-                        "Number of unprocessed findings: %d", len(unprocessed)
-                    )
+                any_unprocessed = self.batch_update_findings(updates) or any_unprocessed
 
         return not any_unprocessed
 

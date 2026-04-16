@@ -96,14 +96,7 @@ class Manager:
             LOGGER.info("Finding matched rule no. %d", index + 1)
 
             updates = rule.create_updates_for_finding(finding)
-            response = self.client.batch_update_findings(**updates)
-
-            processed = response["ProcessedFindings"]
-            unprocessed = response["UnprocessedFindings"]
-            LOGGER.info("Number of processed findings: %d", len(processed))
-            if unprocessed:
-                any_unprocessed = True
-                LOGGER.warning("Number of unprocessed findings: %d", len(unprocessed))
+            any_unprocessed = rule.batch_update_findings(updates) or any_unprocessed
 
         if matched_rules == 0:
             LOGGER.info("Finding did not match any rules; nothing to update.")
