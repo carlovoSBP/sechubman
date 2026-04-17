@@ -111,19 +111,16 @@ def _get_values_recursively(
         # We should only continue traversing if the current part is a dict
         # Otherwise something is off and we should simply error out by trying to access it like a dict and letting the exception propagate
         candidate = part.get(path_key)
+
         if candidate is None:
             continue
-        if isinstance(candidate, list):
-            if not is_list:
-                message = f"Path segment {path_key} is not marked as list, but value is a list: {candidate}"
-                raise ValueError(message)
-            for item in candidate:
-                yield from _get_values_recursively([item], path[1:])
-        else:
-            if is_list:
-                message = f"Path segment {path_key} is marked as list, but value is not a list: {candidate}"
-                raise ValueError(message)
-            yield from _get_values_recursively([candidate], path[1:])
+        if isinstance(candidate, list) != is_list:
+            message = f"Path segment {path_key} list-ness does not match the expected list-ness: {candidate}"
+            raise ValueError(message)
+
+        next_findings_parts = candidate if is_list else [candidate]
+        for next_finding_parts in next_findings_parts:
+            yield from _get_values_recursively([next_finding_parts], path[1:])
 
 
 def get_values_by_boto_argument(finding: dict, name: str) -> list[Any]:
