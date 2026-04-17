@@ -1,6 +1,7 @@
 import datetime
 import json
 import os
+from copy import deepcopy
 from pathlib import Path
 from unittest import TestCase
 from unittest.mock import patch
@@ -232,6 +233,70 @@ class TestRuleDataclass(TestCase):
             [
                 BotoStubCall("get_findings", {"Findings": [FINDING_GROOMED]}, FILTERS),
                 BotoStubCall("batch_update_findings", PROCESSED, JSON_UPDATES),
+            ],
+        ):
+            self.assertTrue(rule.get_and_update())
+
+    def test_json_apply_groups_updates_by_resulting_note_text(self):
+        rule = Rule(**JSON_RULES[0], client=SECURITYHUB_SESSION_CLIENT)
+
+        finding_one = deepcopy(FINDING_GROOMED)
+        finding_one["Id"] = FINDINGS["Findings"][0]["Id"]
+        finding_one["Note"]["Text"] = (
+            '{"jiraIssue":"PROJ-123","suppressionReason":"override me"}'
+        )
+
+        finding_two = deepcopy(FINDING_GROOMED)
+        finding_two["Id"] = FINDINGS["Findings"][1]["Id"]
+        finding_two["Note"]["Text"] = (
+            '{"jiraIssue":"PROJ-123","suppressionReason":"some old value"}'
+        )
+
+        finding_three = deepcopy(FINDING_GROOMED)
+        finding_three["Id"] = FINDINGS["Findings"][2]["Id"]
+        finding_three["Note"]["Text"] = (
+            '{"jiraIssue":"PROJ-456","suppressionReason":"override me"}'
+        )
+
+        updates_for_proj_123 = {
+            "Note": {
+                "Text": '{"jiraIssue":"PROJ-123","suppressionReason":"Test test"}',
+                "UpdatedBy": "sechubman",
+            },
+            "FindingIdentifiers": [
+                {
+                    "Id": finding_one["Id"],
+                    "ProductArn": finding_one["ProductArn"],
+                },
+                {
+                    "Id": finding_two["Id"],
+                    "ProductArn": finding_two["ProductArn"],
+                },
+            ],
+        }
+        updates_for_proj_456 = {
+            "Note": {
+                "Text": '{"jiraIssue":"PROJ-456","suppressionReason":"Test test"}',
+                "UpdatedBy": "sechubman",
+            },
+            "FindingIdentifiers": [
+                {
+                    "Id": finding_three["Id"],
+                    "ProductArn": finding_three["ProductArn"],
+                }
+            ],
+        }
+
+        with stub_boto_client(
+            SECURITYHUB_SESSION_CLIENT,
+            [
+                BotoStubCall(
+                    "get_findings",
+                    {"Findings": [finding_one, finding_two, finding_three]},
+                    FILTERS,
+                ),
+                BotoStubCall("batch_update_findings", PROCESSED, updates_for_proj_123),
+                BotoStubCall("batch_update_findings", PROCESSED, updates_for_proj_456),
             ],
         ):
             self.assertTrue(rule.get_and_update())

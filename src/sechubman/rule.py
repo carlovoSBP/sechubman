@@ -84,10 +84,6 @@ class Rule:
 
         return config
 
-    def _is_json_note_update_mode(self) -> bool:
-        """Check whether note text updates should merge existing JSON note metadata."""
-        return self._note_text_config.get("Mode") == "jsonUpdate"
-
     def _parse_note_text_json(self, note_text: str) -> dict[str, Any]:
         """Get existing note metadata from a finding if it is valid JSON object text."""
         try:
@@ -119,38 +115,79 @@ class Rule:
         note_dict[key] = note_text_update
         return note_dict
 
-    def create_updates_for_finding(self, finding: dict[str, Any]) -> dict[str, Any]:
-        """Create updates payload for a single finding based on this rule's template, including optional JSON note merging.
-
-        Parameters
-        ----------
-        finding : dict[str, Any]
-            The finding for which to create updates.
-
-        Returns
-        -------
-        dict[str, Any]
-            The updates payload for the finding.
-        """
+    def _create_simple_updates(
+        self, findings: list[dict[str, Any]], overrides: dict[str, Any] | None = None
+    ) -> dict[str, Any]:
+        if overrides is None:
+            overrides = {}
         updates = self.UpdatesToFilteredFindings.copy()
         updates["FindingIdentifiers"] = [
             {
                 "Id": finding["Id"],
                 "ProductArn": finding["ProductArn"],
             }
+            for finding in findings
+        ]
+        for override_key, override_value in overrides.items():
+            updates[override_key] = override_value
+        return updates
+
+    def _create_json_note(self, note_text: str) -> dict[str, str]:
+        note_update = self.UpdatesToFilteredFindings["Note"].copy()
+        note_update["Text"] = json.dumps(
+            self._create_note_dict(note_text, note_update["Text"]),
+            separators=(",", ":"),
+        )
+
+        return note_update
+
+    def _create_json_update_config(
+        self, matched_findings: list[dict[str, Any]]
+    ) -> list[dict[str, Any]]:
+        """Group findings by resulting note text and create update configs for each group.
+
+        This is used in jsonUpdate mode to update multiple findings at once when they would receive the same note update payload.
+        This is an optimization to reduce the number of batch_update_findings calls and thus improve performance and reduce the chance of hitting API rate limits.
+        """
+        grouped_findings: dict[str, list[dict[str, Any]]] = {}
+        note_overrides: dict[str, dict[str, str]] = {}
+
+        for finding in matched_findings:
+            update_note = self._create_json_note(
+                finding.get("Note", {}).get("Text", "")
+            )
+            update_text = update_note["Text"]
+
+            note_overrides[update_text] = update_note
+            grouped_findings.setdefault(update_text, []).append(finding)
+
+        return [
+            {
+                "findings": findings,
+                "overrides": {"Note": note_overrides[update_text]},
+            }
+            for update_text, findings in grouped_findings.items()
         ]
 
-        if self._is_json_note_update_mode():
-            finding_note = finding.get("Note", {})
-            finding_note_text = finding_note.get("Text", "")
-            # this saves a deepcopy of self.UpdatesToFilteredFindings
-            # which would otherwise be necessary to avoid mutating the rule's template when merging with existing note metadata
-            note_updates = updates["Note"].copy()
-            note_dict = self._create_note_dict(finding_note_text, note_updates["Text"])
-            note_updates["Text"] = json.dumps(note_dict, separators=(",", ":"))
-            updates["Note"] = note_updates
+    def _create_updates_to_apply(
+        self, matched_findings: list[dict[str, Any]]
+    ) -> list[dict[str, Any]]:
+        """Create one or more update payloads for the matched findings.
 
-        return updates
+        In jsonUpdate mode, findings are grouped by resulting note text so that
+        each batch_update_findings call can update multiple findings at once
+        whenever they would receive the same note update payload.
+        """
+        updates_configs = (
+            self._create_json_update_config(matched_findings)
+            if self._note_text_config.get("Mode") == "jsonUpdate"
+            else [
+                {
+                    "findings": matched_findings,
+                }
+            ]
+        )
+        return [self._create_simple_updates(**config) for config in updates_configs]
 
     def _validate_updates_to_filtered_findings(self) -> None:
         """Validate the UpdatesToFilteredFindings argument.
@@ -202,20 +239,9 @@ class Rule:
             for filter_name, filters_dicts in self.Filters.items()
         }
 
-    def batch_update_findings(self, updates: dict[str, Any]) -> bool:
-        """Batch update findings in AWS SecurityHub.
-
-        Parameters
-        ----------
-        updates : dict[str, Any]
-            The updates payload for the findings.
-
-        Returns
-        -------
-        bool
-            True if there are unprocessed findings, False otherwise.
-        """
-        response = self.client.batch_update_findings(**updates)
+    def _batch_update_findings(self, update: dict[str, Any]) -> bool:
+        """Batch update findings in AWS SecurityHub."""
+        response = self.client.batch_update_findings(**update)
 
         processed = response["ProcessedFindings"]
         unprocessed = response["UnprocessedFindings"]
@@ -226,6 +252,28 @@ class Rule:
             return True
 
         return False
+
+    def batch_update_findings(self, findings: list[dict[str, Any]]) -> bool:
+        """Batch update findings in AWS SecurityHub.
+
+        Parameters
+        ----------
+        findings : list[dict[str, Any]]
+            The list of findings to update.
+
+        Returns
+        -------
+        bool
+            True if there are unprocessed findings, False otherwise.
+        """
+        updates = self._create_updates_to_apply(findings)
+
+        any_unprocessed = False
+
+        for update in updates:
+            any_unprocessed = self._batch_update_findings(update) or any_unprocessed
+
+        return any_unprocessed
 
     def get_and_update(self) -> bool:
         """Get all the findings matching the rule's filters from AWS SecurityHub and update them according to the rule's updates.
@@ -241,8 +289,6 @@ class Rule:
         )
 
         any_unprocessed = False
-        if not self._is_json_note_update_mode():
-            updates = self.UpdatesToFilteredFindings.copy()
 
         for page in page_iterator:
             matched_findings = [
@@ -257,26 +303,9 @@ class Rule:
                 )
                 continue
 
-            # updates_to_apply must be a list because in jsonUpdate mode,
-            # we need to apply different updates for each finding to merge the note text correctly,
-            # while in non-jsonUpdate mode we can apply the same updates for all findings
-            if self._is_json_note_update_mode():
-                updates_to_apply = [
-                    self.create_updates_for_finding(finding)
-                    for finding in matched_findings
-                ]
-            else:
-                updates["FindingIdentifiers"] = [
-                    {
-                        "Id": finding["Id"],
-                        "ProductArn": finding["ProductArn"],
-                    }
-                    for finding in matched_findings
-                ]
-                updates_to_apply = [updates]
-
-            for updates in updates_to_apply:
-                any_unprocessed = self.batch_update_findings(updates) or any_unprocessed
+            any_unprocessed = (
+                self.batch_update_findings(matched_findings) or any_unprocessed
+            )
 
         return not any_unprocessed
 

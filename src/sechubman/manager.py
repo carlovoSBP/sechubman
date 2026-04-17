@@ -95,8 +95,7 @@ class Manager:
             matched_rules += 1
             LOGGER.info("Finding matched rule no. %d", index + 1)
 
-            updates = rule.create_updates_for_finding(finding)
-            any_unprocessed = rule.batch_update_findings(updates) or any_unprocessed
+            any_unprocessed = rule.batch_update_findings([finding]) or any_unprocessed
 
         if matched_rules == 0:
             LOGGER.info("Finding did not match any rules; nothing to update.")
