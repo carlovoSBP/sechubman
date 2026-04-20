@@ -31,6 +31,9 @@ Things worth noting about the library itself.
   Existing notes in plain text (non-JSON-formatted) will be overwritten, the previous note will be captured in the logs.
   When there is an existing JSON-formatted note, this mode will update only the key it manages in that note like: `{"jiraIssue":"PROJ-123","Note":"Suppress SSM.7 findings"}`.
   See the code examples below on how to activate it.
+- Often the note is the only specific input to what you want to update with a rule.
+  To trim some boilerplate config per rule, the feature `QuickNote` can be used.
+  See the code examples below on how to use it.
 
 ## Example usage
 
@@ -79,7 +82,7 @@ rule = Rule(**rules[0], client=client)
 rule.get_and_update()
 ```
 
-### Condensing big rule sets with a lot of input overlap
+### Condensing big rule sets
 
 ```yaml
 ManagerConfig:
@@ -111,12 +114,10 @@ Rules:
     ResourceId:
     - Value: arn:aws:s3:::test-sechubman-2
       Comparison: EQUALS
-  UpdatesToFilteredFindings:
-    Note:
-      Text: Test-2
   ExtraFeatures:
     NoteTextConfig:
       Mode: plaintext
+    QuickNote: Test-2
 ```
 
 ```Python

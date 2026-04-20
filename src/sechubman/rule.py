@@ -33,17 +33,32 @@ class Rule:
 
     def __post_init__(self) -> None:
         """Validate the rule upon initialization."""
+        self._apply_quick_note()
         self._validate_boto_compatibility()
         self._filters = self._create_filters()
         self._regex_string_filters = self._create_regex_string_filters()
         self._note_text_config = self._create_note_text_config()
+
+    def _apply_quick_note(self) -> None:
+        """Apply QuickNote feature by mapping it to UpdatesToFilteredFindings.Note.Text."""
+        # boto validation will ensure that if Note is in UpdatesToFilteredFindings
+        # it is a dict with a Text key
+        # so we can safely set it here without further checks
+        if self.ExtraFeatures and "QuickNote" in self.ExtraFeatures:
+            self.UpdatesToFilteredFindings["Note"]["Text"] = self.ExtraFeatures[
+                "QuickNote"
+            ]
 
     def _create_regex_string_filters(self) -> dict[str, RegexStringFilter]:
         """Create regex string filters from ExtraFeatures."""
         if not self.ExtraFeatures:
             return {}
 
-        allowed_extra_features = {"RegexStringFilters", "NoteTextConfig"}
+        allowed_extra_features = {
+            "RegexStringFilters",
+            "NoteTextConfig",
+            "QuickNote",
+        }
         unknown_features = set(self.ExtraFeatures).difference(allowed_extra_features)
         if unknown_features:
             msg = f"Unsupported extra feature(s): {sorted(unknown_features)}"

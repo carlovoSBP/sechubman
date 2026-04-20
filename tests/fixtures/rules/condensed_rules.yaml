@@ -20,6 +20,5 @@ Rules:
     ResourceId:
     - Value: arn:aws:s3:::test-sechubman
       Comparison: EQUALS
-  UpdatesToFilteredFindings:
-    Note:
-      Text: Test
+  ExtraFeatures:
+    QuickNote: Test
