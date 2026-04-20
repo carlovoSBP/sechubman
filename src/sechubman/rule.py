@@ -17,9 +17,17 @@ from .filters import (
     create_filters,
     create_regex_string_filters,
 )
+from .note_text_config import NoteTextConfig
 from .sechubman import validate_filters, validate_updates
 
 LOGGER = logging.getLogger(__name__)
+
+
+ALLOWED_EXTRA_FEATURES = {
+    "RegexStringFilters",
+    "NoteTextConfig",
+    "QuickNote",
+}
 
 
 @dataclass
@@ -33,71 +41,43 @@ class Rule:
 
     def __post_init__(self) -> None:
         """Validate the rule upon initialization."""
+        self._validate_extra_features()
         self._apply_quick_note()
         self._validate_boto_compatibility()
         self._filters = self._create_filters()
         self._regex_string_filters = self._create_regex_string_filters()
         self._note_text_config = self._create_note_text_config()
 
+    def _validate_extra_features(self) -> None:
+        """Validate ExtraFeatures."""
+        unknown_features = set(self.ExtraFeatures).difference(ALLOWED_EXTRA_FEATURES)
+        if unknown_features:
+            msg = f"Unsupported extra feature(s): {sorted(unknown_features)}"
+            raise ValueError(msg)
+
     def _apply_quick_note(self) -> None:
         """Apply QuickNote feature by mapping it to UpdatesToFilteredFindings.Note.Text."""
         # boto validation will ensure that if Note is in UpdatesToFilteredFindings
         # it is a dict with a Text key
         # so we can safely set it here without further checks
-        if self.ExtraFeatures and "QuickNote" in self.ExtraFeatures:
+        if "QuickNote" in self.ExtraFeatures:
             self.UpdatesToFilteredFindings["Note"]["Text"] = self.ExtraFeatures[
                 "QuickNote"
             ]
 
     def _create_regex_string_filters(self) -> dict[str, RegexStringFilter]:
         """Create regex string filters from ExtraFeatures."""
-        if not self.ExtraFeatures:
-            return {}
+        return create_regex_string_filters(
+            self.ExtraFeatures.get("RegexStringFilters", {}), self.client
+        )
 
-        allowed_extra_features = {
-            "RegexStringFilters",
-            "NoteTextConfig",
-            "QuickNote",
-        }
-        unknown_features = set(self.ExtraFeatures).difference(allowed_extra_features)
-        if unknown_features:
-            msg = f"Unsupported extra feature(s): {sorted(unknown_features)}"
-            raise ValueError(msg)
-
-        regex_string_filters = self.ExtraFeatures.get("RegexStringFilters", {})
-        return create_regex_string_filters(regex_string_filters, self.client)
-
-    def _create_note_text_config(self) -> dict[str, str]:
+    def _create_note_text_config(self) -> NoteTextConfig:
         """Create note text configuration from ExtraFeatures."""
-        if not self.ExtraFeatures or "NoteTextConfig" not in self.ExtraFeatures:
-            return {}
-
-        note_text_config = self.ExtraFeatures["NoteTextConfig"]
-        if not isinstance(note_text_config, dict):
-            msg = "'ExtraFeatures.NoteTextConfig' should be a dictionary"
-            raise TypeError(msg)
-
-        mode = note_text_config.get("Mode", "plaintext")
-        if mode not in {"plaintext", "jsonUpdate"}:
-            msg = (
-                "'ExtraFeatures.NoteTextConfig.Mode' should be one of "
-                "'plaintext' or 'jsonUpdate'"
-            )
-            raise ValueError(msg)
-
-        config: dict[str, str] = {"Mode": mode}
-        if mode == "jsonUpdate":
-            key = note_text_config.get("Key")
-            if not isinstance(key, str) or not key:
-                msg = (
-                    "'ExtraFeatures.NoteTextConfig.Key' should be a non-empty string "
-                    "when mode is 'jsonUpdate'"
-                )
-                raise ValueError(msg)
-
-            config["Key"] = key
-
-        return config
+        return (
+            NoteTextConfig(**self.ExtraFeatures["NoteTextConfig"])
+            if "NoteTextConfig" in self.ExtraFeatures
+            else NoteTextConfig(Mode="plaintext")
+        )
 
     def _parse_note_text_json(self, note_text: str) -> dict[str, Any]:
         """Get existing note metadata from a finding if it is valid JSON object text."""
@@ -126,7 +106,7 @@ class Rule:
         note_dict = (
             self._parse_note_text_json(finding_note_text) if finding_note_text else {}
         )
-        key = self._note_text_config["Key"]
+        key = self._note_text_config.Key
         note_dict[key] = note_text_update
         return note_dict
 
@@ -195,7 +175,7 @@ class Rule:
         """
         updates_configs = (
             self._create_json_update_config(matched_findings)
-            if self._note_text_config.get("Mode") == "jsonUpdate"
+            if self._note_text_config.Mode == "jsonUpdate"
             else [
                 {
                     "findings": matched_findings,

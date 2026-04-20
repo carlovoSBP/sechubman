@@ -11,3 +11,5 @@
 ::: sechubman.Rule
 
 ::: sechubman.Manager
+
+::: sechubman.NoteTextConfig
