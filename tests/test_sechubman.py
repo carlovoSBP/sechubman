@@ -144,6 +144,33 @@ class TestGetValuesByBotoArgument(TestCase):
         finding = {"Types": []}
         self.assertEqual(get_values_by_boto_argument(finding, "Type"), [])
 
+    def test_nested_lists(self):
+        finding = {
+            "Compliance": {
+                "SecurityControlParameters": [
+                    {
+                        "Value": [
+                            "param1",
+                            "param2",
+                        ]
+                    },
+                    {},
+                    {"Value": []},
+                    {
+                        "Value": [
+                            "param3",
+                        ]
+                    },
+                ]
+            }
+        }
+        self.assertEqual(
+            get_values_by_boto_argument(
+                finding, "ComplianceSecurityControlParametersValue"
+            ),
+            ["param1", "param2", "param3"],
+        )
+
 
 class TestRuleDataclass(TestCase):
     def setUp(self):

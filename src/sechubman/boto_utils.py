@@ -101,9 +101,13 @@ def _get_values_recursively(
     path: tuple[tuple[str, bool], ...],
 ) -> Generator[Any, None, None]:
     """Resolve a special case path recursively and yield the values at the end of the full path."""
+    # Base case:
+    # If the path is empty, yield the current finding parts if present
+    # Then return to stop further processing
     if not path:
-        yield finding_part
-        return  # Base case: if the path is empty, yield the current finding parts, then return to stop further processing
+        if finding_part:
+            yield finding_part
+        return
 
     path_key, is_list = path[0]
 
@@ -117,9 +121,9 @@ def _get_values_recursively(
         message = f"Path segment {path_key} list-ness does not match the expected list-ness: {candidate}"
         raise ValueError(message)
 
-    next_findings_parts = candidate if is_list else [candidate]
-    for next_finding_parts in next_findings_parts:
-        yield from _get_values_recursively(next_finding_parts, path[1:])
+    next_finding_parts = candidate if is_list else [candidate]
+    for next_finding_part in next_finding_parts:
+        yield from _get_values_recursively(next_finding_part, path[1:])
 
 
 def get_values_by_boto_argument(finding: dict, name: str) -> list[Any]:
@@ -144,15 +148,11 @@ def get_values_by_boto_argument(finding: dict, name: str) -> list[Any]:
     list[Any]
         The values from the finding for the given name
     """
-    path = SPECIAL_CASE_PATHS.get(name)
-    if path is not None:
-        results = list(_get_values_recursively(finding, path))
-    else:
-        results = [finding[name]] if name in finding else []
-
-    # Filter out empty values,
-    # because it is more intuitive to return an empty list if there are no valid values than to return a list with for example empty dicts
-    return [result for result in results if result]
+    return (
+        list(_get_values_recursively(finding, path))
+        if (path := SPECIAL_CASE_PATHS.get(name)) is not None
+        else ([value] if (value := finding.get(name)) else [])
+    )
 
 
 @dataclass
