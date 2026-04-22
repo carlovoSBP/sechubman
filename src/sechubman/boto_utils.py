@@ -8,6 +8,7 @@ from typing import Any
 
 from botocore.client import BaseClient
 from botocore.stub import Stubber
+from jmespath import compile as jmespath_compile
 
 # This only contains the special cases that are still relevant for the current finding format
 # The network block and some severity members in the finding format are retired
@@ -83,47 +84,16 @@ SPECIAL_CASES = {
 }
 
 
-def _split_path(path: str) -> tuple[tuple[str, bool], ...]:
-    """Parse a dot path into (key, expand_list) path segments."""
-    return tuple(
-        (segment[:-2], True) if segment.endswith("[]") else (segment, False)
-        for segment in path.split(".")
-    )
-
-
-SPECIAL_CASE_PATHS: dict[str, tuple[tuple[str, bool], ...]] = {
-    name: _split_path(path) for name, path in SPECIAL_CASES.items()
+SPECIAL_CASE_EXPRESSIONS = {
+    name: jmespath_compile(path) for name, path in SPECIAL_CASES.items()
 }
 
 
-def _get_values_recursively(
-    finding_part: object,
-    path: tuple[tuple[str, bool], ...],
-) -> Generator[Any, None, None]:
-    """Resolve a special case path recursively and yield the values at the end of the full path."""
-    # Base case:
-    # If the path is empty, yield the current finding parts if present
-    # Then return to stop further processing
-    if not path:
-        if finding_part:
-            yield finding_part
-        return
-
-    path_key, is_list = path[0]
-
-    # We should only continue traversing if the current part is a dict
-    # Otherwise something is off and we should simply error out by trying to access it like a dict and letting the exception propagate
-    candidate = finding_part.get(path_key)  # type: ignore[attr-defined]
-
-    if candidate is None:
-        return
-    if isinstance(candidate, list) != is_list:
-        message = f"Path segment {path_key} list-ness does not match the expected list-ness: {candidate}"
-        raise ValueError(message)
-
-    next_finding_parts = candidate if is_list else [candidate]
-    for next_finding_part in next_finding_parts:
-        yield from _get_values_recursively(next_finding_part, path[1:])
+def _normalize_values(value: object) -> list[Any]:
+    """Normalize potentially scalar or list results into a list of truthy values."""
+    if isinstance(value, list):
+        return [item for item in value if item]
+    return [value] if value else []
 
 
 def get_values_by_boto_argument(finding: dict, name: str) -> list[Any]:
@@ -148,11 +118,9 @@ def get_values_by_boto_argument(finding: dict, name: str) -> list[Any]:
     list[Any]
         The values from the finding for the given name
     """
-    return (
-        list(_get_values_recursively(finding, path))
-        if (path := SPECIAL_CASE_PATHS.get(name)) is not None
-        else ([value] if (value := finding.get(name)) else [])
-    )
+    if expression := SPECIAL_CASE_EXPRESSIONS.get(name):
+        return _normalize_values(expression.search(finding))
+    return _normalize_values(finding.get(name))
 
 
 @dataclass
