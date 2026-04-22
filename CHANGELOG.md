@@ -1,5 +1,45 @@
 # Changelog
 
+## [1.0.0](https://github.com/carlovoSBP/sechubman/compare/v0.2.0...v1.0.0) (2026-04-20)
+
+
+### ⚠ BREAKING CHANGES
+
+* validate input eagerly on rule creation
+* expect a boto3 client at rule creation
+
+### Features
+
+* add quick note feature ([a585699](https://github.com/carlovoSBP/sechubman/commit/a585699242bb9448de1373569d2c218b1921dc87))
+* batch json update calls ([e529af6](https://github.com/carlovoSBP/sechubman/commit/e529af6e1ac757d681e2a64f6fc53cbf77430692))
+* condense rule files with a lot of repetition via a rule creation manager ([1846907](https://github.com/carlovoSBP/sechubman/commit/18469072eeef89c2e64f40bb37232e75662fcf03))
+* expand special cases for boto argument to finding member matching ([9c8bd3f](https://github.com/carlovoSBP/sechubman/commit/9c8bd3f143d790d8faf3c014075a066daef6c406))
+* expect a boto3 client at rule creation ([2217bbb](https://github.com/carlovoSBP/sechubman/commit/2217bbbd33ce785937dfccc0210c9b569f80088b))
+* extend string matches in findings offline to lists of strings in findings ([53e924b](https://github.com/carlovoSBP/sechubman/commit/53e924b4d111929c9f7073bc8ccbba6e536ddb85))
+* extend string matches in findings offline with negative filters ([e4afa19](https://github.com/carlovoSBP/sechubman/commit/e4afa19817c714f0cbb0a1200cebcaf8d2ccccc2))
+* extend test fixtures on top level string part matches in findings offline ([a22019e](https://github.com/carlovoSBP/sechubman/commit/a22019e8420c51cd849ef4d419d5c1b6df6ef770))
+* filter findings offline on top-level map fields ([12b986b](https://github.com/carlovoSBP/sechubman/commit/12b986bb456b9912c0e78785c4944151e3325537))
+* filter findings offline on top-level number fields ([3da99d6](https://github.com/carlovoSBP/sechubman/commit/3da99d6fc2d243589dfe42a512f10d319220c28e))
+* filter findings offline with different filter name than json path ([f04d77f](https://github.com/carlovoSBP/sechubman/commit/f04d77fc16a189a564fed537d9d1605bc88441bf))
+* filter string-valued fields offline on regex ([ae0b186](https://github.com/carlovoSBP/sechubman/commit/ae0b18669483918900c1f354c7fdcff9ecaf77a2))
+* match on date filters ([efef111](https://github.com/carlovoSBP/sechubman/commit/efef111b4350c5e4c750b9b0b825ddf142fe5309))
+* match rules on top level string parts in findings offline ([87d5b2c](https://github.com/carlovoSBP/sechubman/commit/87d5b2cd53a02fb9cd874f9d4213d3d38175f84c))
+* match rules on top level strings in findings offline ([e35ab4d](https://github.com/carlovoSBP/sechubman/commit/e35ab4da9266ba2745ff201b41d895cc0d81c59c))
+* refactor common validation logic to utils ([d1f62c1](https://github.com/carlovoSBP/sechubman/commit/d1f62c104600817458728d5d24060cc2a613d4d1))
+* return whether rule fully succeeded in apply ([9b8cb5d](https://github.com/carlovoSBP/sechubman/commit/9b8cb5db153d7050ba54d2e442b0aae1ec5407f1))
+* support all resource filtering offline ([1480d11](https://github.com/carlovoSBP/sechubman/commit/1480d1141115d8e1eca0a4195c3fe13ab8afbadd))
+* support ResourceAwsEc2InstanceIpV4Addresses resource filtering offline ([7e83d5f](https://github.com/carlovoSBP/sechubman/commit/7e83d5fa1b5a5447cfa35129840e274d66239de9))
+* test all rule fixtures for valid markup ([0c7bfbb](https://github.com/carlovoSBP/sechubman/commit/0c7bfbb37efe2d059a0f96da62a95999b0f5f8db))
+* update finding note as json if enabled ([b7ed438](https://github.com/carlovoSBP/sechubman/commit/b7ed43889b2c65271129fbb3f8a48b46efbc3bb8))
+* validate input eagerly on rule creation ([394341b](https://github.com/carlovoSBP/sechubman/commit/394341b6f4d29ad07ec44b30fa8b452357796d1b))
+* validate regex string filter names with boto ([a580ca7](https://github.com/carlovoSBP/sechubman/commit/a580ca7417e28bdc8985bd902b1cf0de267fe63f))
+
+
+### Bug Fixes
+
+* support only original get_findings api ([dc9f495](https://github.com/carlovoSBP/sechubman/commit/dc9f495ad9f2d1a71e8b550ea67d5b730cf9c185))
+* validate against refernce util ([986cdd3](https://github.com/carlovoSBP/sechubman/commit/986cdd32f4747cb566599916a1d4d64b66388ff5))
+
 ## [0.2.0](https://github.com/carlovoSBP/sechubman/compare/v0.1.0...v0.2.0) (2025-12-09)
 
 
