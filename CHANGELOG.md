@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.0.1](https://github.com/carlovoSBP/sechubman/compare/v1.0.0...v1.0.1) (2026-04-22)
+
+
+### Bug Fixes
+
+* bump boto3&gt;=1.42.93 ([d6ca120](https://github.com/carlovoSBP/sechubman/commit/d6ca1203ee0d85d1d139a4690febba58ee8496c6))
+
 ## [1.0.0](https://github.com/carlovoSBP/sechubman/compare/v0.2.0...v1.0.0) (2026-04-20)
 
 
