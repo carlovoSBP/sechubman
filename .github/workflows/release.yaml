@@ -11,6 +11,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       releases_created: ${{ steps.release-please.outputs.releases_created }}
+      tag_name: ${{ steps.release-please.outputs.tag_name }}
     permissions:
       contents: write
       pull-requests: write
@@ -133,5 +134,5 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -e
-          TAG_NAME="${GITHUB_REF##*/}"
+          TAG_NAME="${{ needs.release.outputs.tag_name }}"
           gh release upload "$TAG_NAME" lambda_package.zip --clobber --repo "$GITHUB_REPOSITORY"
