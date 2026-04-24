@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.0](https://github.com/carlovoSBP/sechubman/compare/v1.0.1...v1.1.0) (2026-04-24)
+
+
+### Features
+
+* make lib executable in lambda ([489b9ce](https://github.com/carlovoSBP/sechubman/commit/489b9ce1c970e085dead39dae387a96b21cef965))
+
 ## [1.0.1](https://github.com/carlovoSBP/sechubman/compare/v1.0.0...v1.0.1) (2026-04-22)
 
 
