@@ -24,8 +24,12 @@ Things worth noting about the library itself.
 - To make big rule files a little smaller and more readable rules can be create via a rule manager.
   The rule manager can have a default config for all rules created by it.
 - Individual rules can still override the defaults set by the manager.
-- `jsonUpdate` mode enables a more structured way of storing notes.
+- All string filter fields can also filter values on regexes when set under `ExtraFeatures` > `RegexStringFilters`.
+  This is not supported by the API, so it always happens in the logic of this library.
+  See the code examples below on how to use it.
+- Setting `jsonUpdate` mode under `ExtraFeatures` > `NoteTextConfig` enables a more structured way of storing notes.
   It allows for note preservation from other processes by merging existing JSON formatted note metadata.
+  This requires setting a key under which to store the data in the JSON object.
   This is particularly useful when integrating with ticketing systems or when multiple teams manage findings.
   When a note is empty, this mode will create a new JSON note like: `{"Note":"Suppress SSM.7 findings"}`.
   Existing notes in plain text (non-JSON-formatted) will be overwritten, the previous note will be captured in the logs.
