@@ -6,6 +6,19 @@ requires-python = ">=3.12"
 exclude-newer = "2026-04-22T01:01:01Z"
 
 [[package]]
+name = "aws-lambda-powertools"
+version = "3.28.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "jmespath" },
+    { name = "typing-extensions" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/e9/8f/006b11108d539ebcb0c2caa7cd85db0a83815abee54c22da907e3c14466a/aws_lambda_powertools-3.28.0.tar.gz", hash = "sha256:8849bc4fb01562aa13f1530a456626192256081ce2cfdf0cb0836ad6cba3c6b1", size = 782822, upload-time = "2026-04-14T10:34:17.29Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/77/ab/531e86d4a4306f9fedc78609259aa0ee7849d592da63168694ac5b96abb7/aws_lambda_powertools-3.28.0-py3-none-any.whl", hash = "sha256:6db5996784913b4b3a7ff04943cefaef4089440569ecbc2180ce07f08dd87659", size = 933148, upload-time = "2026-04-14T10:34:15.234Z" },
+]
+
+[[package]]
 name = "boto3"
 version = "1.42.93"
 source = { registry = "https://pypi.org/simple" }
@@ -523,6 +536,11 @@ dependencies = [
     { name = "boto3" },
 ]
 
+[package.optional-dependencies]
+lambda = [
+    { name = "aws-lambda-powertools" },
+]
+
 [package.dev-dependencies]
 dev = [
     { name = "click" },
@@ -534,7 +552,11 @@ dev = [
 ]
 
 [package.metadata]
-requires-dist = [{ name = "boto3", specifier = ">=1.42.93" }]
+requires-dist = [
+    { name = "aws-lambda-powertools", marker = "extra == 'lambda'", specifier = ">=3.28.0" },
+    { name = "boto3", specifier = ">=1.42.93" },
+]
+provides-extras = ["lambda"]
 
 [package.metadata.requires-dev]
 dev = [

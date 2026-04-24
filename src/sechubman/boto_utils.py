@@ -90,7 +90,7 @@ SPECIAL_CASE_EXPRESSIONS = {
 
 
 def _normalize_values(value: object) -> list[Any]:
-    """Normalize potentially scalar or list results into a list of truthy values."""
+    """Normalize to a list with only truthy values."""
     if isinstance(value, list):
         return [item for item in value if item]
     return [value] if value else []

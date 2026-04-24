@@ -23,6 +23,9 @@ class AllFilters(Enum):
     NUMBER_FILTERS = NumberFilter
     DATE_FILTERS = DateFilter
     STRING_FILTERS = StringFilter
+    # StringFilter must be before MapFilter in the enum,
+    # otherwise string filter dicts would match to MapFilter,
+    # since all of their keys are also in MapFilter's criterion type
     MAP_FILTERS = MapFilter
     CIDR_FILTERS = CidrFilter
 

@@ -85,3 +85,53 @@ jobs:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@d6db90164ac5ed86f2b6aed7e0febac5b3c0c03e # v4.0.5
+
+  publish-lambda:
+    needs: release
+    if: ${{ needs.release.outputs.releases_created == 'true' }}
+    name: Publish lambda
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+
+      - name: Setup environment
+        uses: ./.github/actions/setup-env
+        with:
+          enable-uv-cache: false # No caching to ensure correct dependencies for publishing
+          sync-uv: false
+
+      - name: Define requirements for lambda package
+        run: |
+          uv export \
+            --frozen \
+            --all-extras \
+            --no-dev \
+            --no-editable \
+            -o requirements.txt
+
+      - name: Pip install dependencies for lambda
+        run: |
+          uv pip install \
+            --no-installer-metadata \
+            --no-compile-bytecode \
+            --python-platform x86_64-manylinux2014 \
+            --python 3.12 \
+            --target lambda_package \
+            -r requirements.txt
+
+      - name: Package lambda code
+        run: |
+          cd lambda_package
+          zip -rq ../lambda_package.zip .
+
+      - name: Upload lambda_package.zip to release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -e
+          TAG_NAME="${GITHUB_REF##*/}"
+          gh release upload "$TAG_NAME" lambda_package.zip --clobber --repo "$GITHUB_REPOSITORY"

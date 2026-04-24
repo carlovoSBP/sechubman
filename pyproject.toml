@@ -17,6 +17,11 @@ classifiers = [
     "Programming Language :: Python :: 3.12",
 ]
 
+[project.optional-dependencies]
+lambda = [
+    "aws-lambda-powertools>=3.28.0",
+]
+
 # click is a transient dependency, but broken beyond version 8.2.1
 # so this is needed until the following issue is fixed:
 # https://github.com/mkdocs/mkdocs/issues/4032
