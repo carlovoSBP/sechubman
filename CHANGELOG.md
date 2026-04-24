@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.1](https://github.com/carlovoSBP/sechubman/compare/v1.1.0...v1.1.1) (2026-04-24)
+
+
+### Bug Fixes
+
+* correct tag passing to gh release ([9c0afc8](https://github.com/carlovoSBP/sechubman/commit/9c0afc8b08773ee8878e4a6a4acd865c659e3b83))
+
 ## [1.1.0](https://github.com/carlovoSBP/sechubman/compare/v1.0.1...v1.1.0) (2026-04-24)
 
 
