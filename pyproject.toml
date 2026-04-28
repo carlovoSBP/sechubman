@@ -20,6 +20,7 @@ classifiers = [
 [project.optional-dependencies]
 lambda = [
     "aws-lambda-powertools>=3.28.0",
+    "pyyaml>=6.0.3",
 ]
 
 # click is a transient dependency, but broken beyond version 8.2.1
@@ -31,7 +32,6 @@ dev = [
     "mkdocs==1.6.1",
     "mkdocstrings[python]==1.0.0",
     "mypy==1.19.0",
-    "pyyaml>=6.0.3",
     "ruff==0.14.7",
 ]
 

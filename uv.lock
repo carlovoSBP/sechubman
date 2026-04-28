@@ -539,6 +539,7 @@ dependencies = [
 [package.optional-dependencies]
 lambda = [
     { name = "aws-lambda-powertools" },
+    { name = "pyyaml" },
 ]
 
 [package.dev-dependencies]
@@ -547,7 +548,6 @@ dev = [
     { name = "mkdocs" },
     { name = "mkdocstrings", extra = ["python"] },
     { name = "mypy" },
-    { name = "pyyaml" },
     { name = "ruff" },
 ]
 
@@ -555,6 +555,7 @@ dev = [
 requires-dist = [
     { name = "aws-lambda-powertools", marker = "extra == 'lambda'", specifier = ">=3.28.0" },
     { name = "boto3", specifier = ">=1.42.93" },
+    { name = "pyyaml", marker = "extra == 'lambda'", specifier = ">=6.0.3" },
 ]
 provides-extras = ["lambda"]
 
@@ -564,7 +565,6 @@ dev = [
     { name = "mkdocs", specifier = "==1.6.1" },
     { name = "mkdocstrings", extras = ["python"], specifier = "==1.0.0" },
     { name = "mypy", specifier = "==1.19.0" },
-    { name = "pyyaml", specifier = ">=6.0.3" },
     { name = "ruff", specifier = "==0.14.7" },
 ]
 
