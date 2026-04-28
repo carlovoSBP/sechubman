@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.2](https://github.com/carlovoSBP/sechubman/compare/v1.1.1...v1.1.2) (2026-04-28)
+
+
+### Bug Fixes
+
+* move pyyaml to correct dependency group ([b32f9e2](https://github.com/carlovoSBP/sechubman/commit/b32f9e252bcd0bf15be346ceff3581f096ddaba5))
+
 ## [1.1.1](https://github.com/carlovoSBP/sechubman/compare/v1.1.0...v1.1.1) (2026-04-24)
 
 
