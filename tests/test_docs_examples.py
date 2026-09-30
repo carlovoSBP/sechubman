@@ -40,7 +40,19 @@ class TestDocsRuleExamples(TestCase):
                     manager = Manager(
                         **block["ManagerConfig"], client=SECURITYHUB_SESSION_CLIENT
                     )
-                    manager.set_rules(block["Rules"])
+                    if "Rules" in block:
+                        manager.set_rules(block["Rules"])
                 else:
                     for rule_input in block["Rules"]:
                         Rule(**rule_input, client=SECURITYHUB_SESSION_CLIENT)
+
+    def test_migration_example_rules_file_is_valid(self):
+        """The awsfindingsmanagerlib -> sechubman migration example, translated from
+        terraform-aws-mcaf-securityhub-findings-manager's examples/rules.yaml, must stay valid.
+        """
+        with Path("docs/examples/rules.yaml").open() as file:
+            rules = yaml.safe_load(file)
+
+        manager = Manager(**rules["ManagerConfig"], client=SECURITYHUB_SESSION_CLIENT)
+        registered_rules = manager.set_rules(rules["Rules"])
+        self.assertEqual(len(registered_rules), len(rules["Rules"]))

@@ -15,6 +15,7 @@ nav:
     - "Generic utilities": glossary/utils.md
     - "Boto-related utilities": glossary/boto_utils.md
     - "Domain models": glossary/filters.md
+    - "AWS Lambda handlers": glossary/aws_lambda.md
 
 watch:
   - src

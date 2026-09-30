@@ -142,3 +142,108 @@ manager = Manager(**rules["ManagerConfig"], client=client)
 manager.set_rules(rules["Rules"])
 manager.get_and_update_all()
 ```
+
+## Running in AWS Lambda
+
+Installing the `lambda` extra (`sechubman[lambda]`, pulling in `aws-lambda-powertools` and
+`pyyaml`) provides `sechubman.aws_lambda`, four ready-made Lambda handlers built on top of
+`Manager`/`Rule`:
+
+- `sechubman.aws_lambda.scheduled.lambda_handler`: applies all configured rules to every
+  currently matching finding. Intended to run on a schedule (e.g. an EventBridge rule).
+  Raises `RuntimeError` if any matched finding could not be processed, so the invocation is
+  reported as failed. This is a drop-in replacement for `sechubman.aws_lambda_handler.lambda_handler`
+  from sechubman 1.1.x, which is still available as a deprecated re-export of this handler.
+- `sechubman.aws_lambda.events.lambda_handler`: intended as the target of an EventBridge rule
+  matching `"Security Hub Findings - Imported"` events. Suppresses the finding(s) carried by the
+  event and returns `{"finding_state": "suppressed"}` or `{"finding_state": "skipped"}` instead of
+  raising, so that a Step Function (or any other orchestration) placed after it can branch on
+  whether the finding still needs further handling, such as a ticket.
+- `sechubman.aws_lambda.trigger.lambda_handler`: intended as the target of an S3 `ObjectCreated`
+  notification on the rules file. Loads the rules and places one SQS message per rule (carrying
+  the shared `ManagerConfig` alongside it) on the queue named by the `SQS_QUEUE_NAME` environment
+  variable (its URL, despite the name), for `sechubman.aws_lambda.worker` to apply.
+- `sechubman.aws_lambda.worker.lambda_handler`: intended as the target of an SQS event source
+  mapping consuming the queue that `sechubman.aws_lambda.trigger` writes to. Rebuilds a manager
+  from the single rule carried by each record and applies it against every currently matching
+  finding. Logs and continues on a per-record failure, relying on the queue's own redrive policy
+  for retries rather than on the Lambda invocation failing.
+
+### Rules source
+
+All four handlers load rules through the same logic: if both the `S3_BUCKET_NAME` and
+`S3_OBJECT_NAME` environment variables are set (`sechubman.aws_lambda.trigger` and `.scheduled`
+and `.events` all read rules this way), the rules document is loaded from that S3 object;
+otherwise it is loaded from the local file named by `RULES_PATH` (defaulting to `rules.yaml`,
+relative to the Lambda's working directory), which must be bundled into the deployment package.
+`sechubman.aws_lambda.worker` never loads rules itself: it receives its single rule directly in
+the SQS message body.
+
+### IAM permissions
+
+At minimum, the execution role needs `securityhub:GetFindings` and
+`securityhub:BatchUpdateFindings` on the Security Hub resource. Depending on which handlers are
+deployed, also add `s3:GetObject` on the rules object (`events`, `trigger`, `scheduled`) and
+`sqs:SendMessage`/`sqs:ReceiveMessage`/`sqs:DeleteMessage`/`sqs:GetQueueAttributes` on the queue
+(`trigger` and `worker` respectively).
+
+### Region behaviour
+
+Each handler queries Security Hub in the boto3 client's own region only; unlike some other
+findings-management libraries, it does not enumerate finding aggregators or other regions. Deploy
+the Lambda(s) in the Region where Security Hub findings are aggregated (typically the
+organization's Security Hub home Region) so this default is correct.
+
+### Deployment package
+
+Download `lambda_package.zip` from the sechubman GitHub release; it is built by the release
+workflow with `uv export --all-extras --no-dev` and contains `sechubman` and its dependencies with
+a flat, importable layout. Add your `rules.yaml` (if not loading from S3) at the root of the zip
+alongside the `sechubman` package before uploading it.
+
+## Migrating from awsfindingsmanagerlib
+
+sechubman's rule schema is not compatible with
+[awsfindingsmanagerlib](https://github.com/schubergphilis/awsfindingsmanagerlib)'s: this is a
+deliberate breaking change, not an oversight, since sechubman's filters map onto the
+`get_findings`/`batch_update_findings` boto3 API directly instead of a custom, narrower schema.
+The table below maps the fields used by
+[terraform-aws-mcaf-securityhub-findings-manager](https://github.com/schubergphilis/terraform-aws-mcaf-securityhub-findings-manager)'s
+example `rules.yaml` (one instance of each awsfindingsmanagerlib field it exercises) onto their
+sechubman equivalents; see `docs/examples/rules.yaml` in this repository for the fully translated
+file.
+
+| awsfindingsmanagerlib | sechubman |
+|---|---|
+| `note` | `UpdatesToFilteredFindings.Note.Text` |
+| `action: SUPPRESSED` | `UpdatesToFilteredFindings.Workflow.Status: SUPPRESSED` |
+| `match_on.security_control_id` | `Filters.ComplianceSecurityControlId` |
+| `match_on.tags` (a list of `{key, value}`, matching any of them) | `Filters.ResourceTags` (a list of `{Key, Value, Comparison: EQUALS}`; multiple entries are also matched as "any of") |
+| `match_on.resource_id_regexps` | `ExtraFeatures.RegexStringFilters.ResourceId` (not a native boto3 filter; evaluated by sechubman itself, same as awsfindingsmanagerlib) |
+| `match_on.regions` | `Filters.Region` |
+
+awsfindingsmanagerlib's default filter (`WorkflowStatus` in `NEW`/`NOTIFIED`) and its
+`NoteTextConfig(format="json")` merging behaviour (used by
+terraform-aws-mcaf-securityhub-findings-manager so that a suppression note merges into, rather
+than overwrites, a Jira ticket's `jiraIssue`/`jiraInstance` metadata) both have direct sechubman
+equivalents, set once via `ManagerConfig.DefaultRuleInput` rather than per-rule:
+
+```yaml
+ManagerConfig:
+  DefaultRuleInput:
+    Filters:
+      WorkflowStatus:
+      - Value: NEW
+        Comparison: EQUALS
+      - Value: NOTIFIED
+        Comparison: EQUALS
+    UpdatesToFilteredFindings:
+      Workflow:
+        Status: SUPPRESSED
+      Note:
+        UpdatedBy: sechubman
+    ExtraFeatures:
+      NoteTextConfig:
+        Mode: jsonUpdate
+        Key: Note
+```
