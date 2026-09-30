@@ -6,9 +6,9 @@
     "cookiecutter": {
       "project_name": "sechubman",
       "project_slug": "sechubman",
-      "project_description": "Development flow as Paleofuturistic Python",
-      "full_name": "Paleofuturistic Python",
-      "email": "me@here.now",
+      "project_description": "Manage AWS Security Hub findings with declarative, boto3-shaped suppression rules",
+      "full_name": "Schuberg Philis",
+      "email": "cvanoverbeek@schubergphilis.com",
       "python_version": "3.12",
       "include_apache_license": true,
       "_template": "https://github.com/carlovoSBP/paleofuturistic_python",

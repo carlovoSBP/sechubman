@@ -1,6 +1,8 @@
 site_name: sechubman
-site_author: Paleofuturistic Python
-site_description: Development flow as Paleofuturistic Python
+site_author: Schuberg Philis
+site_description: Manage AWS Security Hub findings with declarative, boto3-shaped suppression rules
+site_url: https://carlovosbp.github.io/sechubman/
+repo_url: https://github.com/carlovoSBP/sechubman
 
 theme:
   name: mkdocs

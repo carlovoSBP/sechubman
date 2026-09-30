@@ -1,10 +1,10 @@
 [project]
 name = "sechubman"
 version = "1.1.1"
-description = "Development flow as Paleofuturistic Python"
+description = "Manage AWS Security Hub findings with declarative, boto3-shaped suppression rules"
 readme = "README.md"
 authors = [
-    {name = "Paleofuturistic Python", email = "me@here.now"},
+    {name = "Schuberg Philis", email = "cvanoverbeek@schubergphilis.com"},
 ]
 requires-python = ">=3.12"
 dependencies = [
@@ -15,7 +15,16 @@ classifiers = [
     "License :: OSI Approved :: Apache Software License",
     # Python versions supported by the package
     "Programming Language :: Python :: 3.12",
+    "Intended Audience :: Developers",
+    "Topic :: Security",
+    "Operating System :: OS Independent",
 ]
+
+[project.urls]
+Homepage = "https://carlovosbp.github.io/sechubman/"
+Documentation = "https://carlovosbp.github.io/sechubman/"
+Repository = "https://github.com/carlovoSBP/sechubman"
+Changelog = "https://github.com/carlovoSBP/sechubman/blob/main/CHANGELOG.md"
 
 [project.optional-dependencies]
 lambda = [
