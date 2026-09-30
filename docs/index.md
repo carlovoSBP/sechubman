@@ -102,10 +102,10 @@ ManagerConfig:
         Status: SUPPRESSED
       Note:
         UpdatedBy: sechubman
-  ExtraFeatures:
-    NoteTextConfig:
-      Mode: jsonUpdate
-      Key: suppressionReason
+    ExtraFeatures:
+      NoteTextConfig:
+        Mode: jsonUpdate
+        Key: suppressionReason
 Rules:
 - Filters:
     ResourceId:
