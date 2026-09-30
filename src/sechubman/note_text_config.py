@@ -1,6 +1,9 @@
 """Domain model for note text configuration."""
 
+import logging
 from dataclasses import dataclass
+
+LOGGER = logging.getLogger(__name__)
 
 NOTE_TEXT_CONFIG_MODE_VALUES = {"plaintext", "jsonUpdate"}
 
@@ -15,8 +18,6 @@ class NoteTextConfig:
         If the Mode is not one of the allowed values.
     ValueError
         If the Key is not a string when Mode is 'jsonUpdate'.
-    ValueError
-        If the Key is set when Mode is 'plaintext'.
     """
 
     Mode: str
@@ -39,5 +40,13 @@ class NoteTextConfig:
                 )
                 raise ValueError(msg)
         elif self.Key:
-            msg = "'ExtraFeatures.NoteTextConfig.Key' should not be set when mode is 'plaintext'"
-            raise ValueError(msg)
+            # A rule commonly only overrides Mode (e.g. back to 'plaintext') while the manager's
+            # DefaultRuleInput sets a Key for its own 'jsonUpdate' default; since Manager merges
+            # rule input into the default dict-wise, Key survives the merge even though it is
+            # meaningless once Mode is 'plaintext'. Ignore it instead of rejecting an otherwise
+            # valid rule.
+            LOGGER.debug(
+                "'ExtraFeatures.NoteTextConfig.Key' (%r) is ignored when mode is 'plaintext'.",
+                self.Key,
+            )
+            self.Key = ""

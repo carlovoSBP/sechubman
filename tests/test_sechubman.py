@@ -276,6 +276,37 @@ class TestRuleDataclass(TestCase):
         }
         self.assertEqual(processed_ids, all_matched_ids)
 
+    def test_manager_rule_can_override_note_text_config_mode_to_plaintext(self):
+        """Regression test: mirrors docs/index.md's "Condensing big rule sets" example.
+
+        A manager default of NoteTextConfig(Mode="jsonUpdate", Key=...) merged with a rule that
+        only overrides Mode back to "plaintext" used to raise ValueError at Rule construction,
+        because the merged Key survived from the default.
+        """
+        manager = Manager(
+            client=SECURITYHUB_SESSION_CLIENT,
+            DefaultRuleInput={
+                "Filters": {},
+                "UpdatesToFilteredFindings": {"Note": {"UpdatedBy": "sechubman"}},
+                "ExtraFeatures": {
+                    "NoteTextConfig": {"Mode": "jsonUpdate", "Key": "suppressionReason"}
+                },
+            },
+        )
+        rules = manager.set_rules(
+            [
+                {
+                    "Filters": {},
+                    "ExtraFeatures": {
+                        "NoteTextConfig": {"Mode": "plaintext"},
+                        "QuickNote": "Test-2",
+                    },
+                }
+            ]
+        )
+        self.assertEqual(rules[0]._note_text_config.Mode, "plaintext")  # noqa: SLF001
+        self.assertEqual(rules[0]._note_text_config.Key, "")  # noqa: SLF001
+
     def test_manager_apply(self):
         manager = Manager(
             **CONDENSED_RULES["ManagerConfig"], client=SECURITYHUB_SESSION_CLIENT
