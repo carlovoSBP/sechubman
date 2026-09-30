@@ -280,7 +280,7 @@ class Rule:
         """
         paginator = self.client.get_paginator("get_findings")
         page_iterator = paginator.paginate(
-            Filters=self.Filters, PaginationConfig={"MaxItems": 100, "PageSize": 100}
+            Filters=self.Filters, PaginationConfig={"PageSize": 100}
         )
 
         any_unprocessed = False

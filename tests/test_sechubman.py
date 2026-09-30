@@ -3,7 +3,7 @@ import json
 import os
 from pathlib import Path
 from unittest import TestCase
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 import botocore.session
 import yaml
@@ -230,6 +230,51 @@ class TestRuleDataclass(TestCase):
             ],
         ):
             self.assertTrue(rule.get_and_update())
+
+    def test_apply_paginates_beyond_first_page(self):
+        """Regression test: get_and_update must not cap pagination to a single page.
+
+        A real "total findings > 100" scenario doesn't fit in a fixture-driven Stubber test, so
+        this asserts directly on the paginator call: no 'MaxItems' cap is passed (only
+        'PageSize'), and every page yielded by the paginator is processed, by faking the
+        paginator itself rather than relying on find volume.
+        """
+        rule = Rule(**CORRECT_RULES[0], client=SECURITYHUB_SESSION_CLIENT)
+
+        all_matched_ids = {
+            identifier["Id"] for identifier in UPDATES["FindingIdentifiers"]
+        }
+        all_findings = FINDINGS["Findings"]
+        pages = [
+            {"Findings": all_findings[:12]},
+            {"Findings": all_findings[12:]},
+        ]
+
+        fake_paginator = MagicMock()
+        fake_paginator.paginate.return_value = iter(pages)
+
+        with (
+            patch.object(
+                rule.client, "get_paginator", return_value=fake_paginator
+            ) as get_paginator,
+            patch.object(
+                rule.client, "batch_update_findings", return_value=PROCESSED
+            ) as batch_update_findings,
+        ):
+            self.assertTrue(rule.get_and_update())
+
+        get_paginator.assert_called_once_with("get_findings")
+        _, pagination_kwargs = fake_paginator.paginate.call_args
+        self.assertNotIn("MaxItems", pagination_kwargs["PaginationConfig"])
+
+        # Both pages must have produced their own batch_update_findings call.
+        self.assertEqual(batch_update_findings.call_count, 2)
+        processed_ids = {
+            identifier["Id"]
+            for call in batch_update_findings.call_args_list
+            for identifier in call.kwargs["FindingIdentifiers"]
+        }
+        self.assertEqual(processed_ids, all_matched_ids)
 
     def test_manager_apply(self):
         manager = Manager(
