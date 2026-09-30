@@ -5,9 +5,18 @@ from pathlib import Path
 from typing import Any
 
 from botocore.client import BaseClient
-from yaml import safe_load
 
 from sechubman import Manager
+
+try:
+    from yaml import safe_load
+except ImportError as error:
+    msg = (
+        "pyyaml is required to use sechubman.aws_lambda handlers. "
+        "Install it with the 'lambda' extra, e.g. `uv add 'sechubman[lambda]'` "
+        "or `pip install 'sechubman[lambda]'`."
+    )
+    raise ImportError(msg) from error
 
 ALLOWED_MANAGER_CONFIG_KEYS = {"DefaultRuleInput"}
 
