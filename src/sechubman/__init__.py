@@ -6,7 +6,7 @@ from .boto_utils import (
     stub_boto_client,
     validate_call_params,
 )
-from .manager import Manager
+from .manager import Manager, MatchAndUpdateResult
 from .note_text_config import NoteTextConfig
 from .rule import Rule
 from .sechubman import validate_filters, validate_updates
@@ -21,6 +21,7 @@ from .utils import (
 __all__ = [
     "BotoStubCall",
     "Manager",
+    "MatchAndUpdateResult",
     "NoteTextConfig",
     "Rule",
     "TimeRange",

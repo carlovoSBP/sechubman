@@ -12,4 +12,6 @@
 
 ::: sechubman.Manager
 
+::: sechubman.MatchAndUpdateResult
+
 ::: sechubman.NoteTextConfig

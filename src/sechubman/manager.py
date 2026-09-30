@@ -11,6 +11,23 @@ from sechubman.rule import Rule
 LOGGER = logging.getLogger(__name__)
 
 
+@dataclass(frozen=True)
+class MatchAndUpdateResult:
+    """The outcome of matching and updating a single finding against all configured rules.
+
+    Attributes
+    ----------
+    matched_rules : int
+        The number of rules that matched the finding.
+    all_processed : bool
+        True if there were no unprocessed findings for any of the matched rules'
+        updates, False otherwise. Vacuously True when no rule matched.
+    """
+
+    matched_rules: int
+    all_processed: bool
+
+
 @dataclass
 class Manager:
     """Dataclass managing rule creation."""
@@ -72,8 +89,11 @@ class Manager:
                 all_success = False
         return all_success
 
-    def match_and_update(self, finding: dict[str, Any]) -> bool:
+    def process_finding(self, finding: dict[str, Any]) -> MatchAndUpdateResult:
         """Match one finding against all configured rules and apply updates for each match.
+
+        Unlike `match_and_update`, this also reports how many rules matched, so callers can
+        distinguish "nothing matched" from "everything matched and was processed successfully".
 
         Parameters
         ----------
@@ -82,8 +102,8 @@ class Manager:
 
         Returns
         -------
-        bool
-            True if all matching updates were processed, False otherwise.
+        MatchAndUpdateResult
+            The number of rules that matched and whether all matching updates were processed.
         """
         any_unprocessed = False
         matched_rules = 0
@@ -100,4 +120,21 @@ class Manager:
         if matched_rules == 0:
             LOGGER.info("Finding did not match any rules; nothing to update.")
 
-        return not any_unprocessed
+        return MatchAndUpdateResult(
+            matched_rules=matched_rules, all_processed=not any_unprocessed
+        )
+
+    def match_and_update(self, finding: dict[str, Any]) -> bool:
+        """Match one finding against all configured rules and apply updates for each match.
+
+        Parameters
+        ----------
+        finding : dict[str, Any]
+            The finding to match and update.
+
+        Returns
+        -------
+        bool
+            True if all matching updates were processed, False otherwise.
+        """
+        return self.process_finding(finding).all_processed

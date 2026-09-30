@@ -342,6 +342,42 @@ class TestRuleDataclass(TestCase):
         ):
             self.assertTrue(manager.match_and_update(FINDING_GROOMED))
 
+    def test_process_finding_reports_matched_rule_count(self):
+        manager = Manager(client=SECURITYHUB_SESSION_CLIENT)
+        manager.set_rules(JSON_RULES)
+        with stub_boto_client(
+            SECURITYHUB_SESSION_CLIENT,
+            [
+                BotoStubCall("batch_update_findings", PROCESSED, JSON_UPDATES),
+            ],
+        ):
+            result = manager.process_finding(FINDING_GROOMED)
+        self.assertEqual(result.matched_rules, 1)
+        self.assertTrue(result.all_processed)
+
+    def test_process_finding_reports_no_matched_rules(self):
+        manager = Manager(client=SECURITYHUB_SESSION_CLIENT)
+        manager.set_rules(JSON_RULES)
+        non_matching_finding = {**FINDING_GROOMED, "Resources": []}
+
+        result = manager.process_finding(non_matching_finding)
+
+        self.assertEqual(result.matched_rules, 0)
+        self.assertTrue(result.all_processed)
+
+    def test_process_finding_reports_unprocessed_updates(self):
+        manager = Manager(client=SECURITYHUB_SESSION_CLIENT)
+        manager.set_rules(JSON_RULES)
+        with stub_boto_client(
+            SECURITYHUB_SESSION_CLIENT,
+            [
+                BotoStubCall("batch_update_findings", UNPROCESSED, JSON_UPDATES),
+            ],
+        ):
+            result = manager.process_finding(FINDING_GROOMED)
+        self.assertEqual(result.matched_rules, 1)
+        self.assertFalse(result.all_processed)
+
     def test_match(self):
         for all_filter_type_match_rule in ALL_FILTER_TYPES_MATCH_RULES:
             with self.subTest(all_filter_type_match_rule=all_filter_type_match_rule):
