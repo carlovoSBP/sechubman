@@ -151,8 +151,9 @@ Installing the `lambda` extra (`sechubman[lambda]`, pulling in `aws-lambda-power
 - `sechubman.aws_lambda.scheduled.lambda_handler`: applies all configured rules to every
   currently matching finding. Intended to run on a schedule (e.g. an EventBridge rule).
   Raises `RuntimeError` if any matched finding could not be processed, so the invocation is
-  reported as failed. This is a drop-in replacement for `sechubman.aws_lambda_handler.lambda_handler`
-  from sechubman 1.1.x, which is still available as a deprecated re-export of this handler.
+  reported as failed. `sechubman.aws_lambda_handler.lambda_handler` (sechubman 1.1.x's Lambda
+  handler) has been removed; if a Lambda is configured with that handler path, update it to
+  this one.
 - `sechubman.aws_lambda.events.lambda_handler`: intended as the target of an EventBridge rule
   matching `"Security Hub Findings - Imported"` events. Suppresses the finding(s) carried by the
   event and returns `{"finding_state": "suppressed"}` or `{"finding_state": "skipped"}` instead of

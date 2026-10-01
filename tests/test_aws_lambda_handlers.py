@@ -19,9 +19,6 @@ os.environ.setdefault("AWS_SESSION_TOKEN", "abc123token")
 
 from sechubman import Manager
 from sechubman.aws_lambda import events, scheduled, trigger, worker
-from sechubman.aws_lambda_handler import (
-    lambda_handler as deprecated_lambda_handler,
-)
 from sechubman.boto_utils import BotoStubCall, stub_boto_client
 
 with Path("tests/fixtures/rules/correct_rules.yaml").open() as file:
@@ -229,8 +226,3 @@ class TestScheduledHandler(TestCase):
             self.assertRaises(RuntimeError),
         ):
             scheduled.lambda_handler({}, FAKE_CONTEXT)
-
-
-class TestBackwardsCompatibleShim(TestCase):
-    def test_re_exports_the_scheduled_handler(self):
-        self.assertIs(deprecated_lambda_handler, scheduled.lambda_handler)

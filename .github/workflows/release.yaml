@@ -134,8 +134,6 @@ jobs:
           import sechubman.aws_lambda.trigger
           import sechubman.aws_lambda.worker
           import sechubman.aws_lambda.scheduled
-          import sechubman.aws_lambda_handler
-          assert sechubman.aws_lambda_handler.lambda_handler is sechubman.aws_lambda.scheduled.lambda_handler
           print('lambda_package imports cleanly')
           "
 
