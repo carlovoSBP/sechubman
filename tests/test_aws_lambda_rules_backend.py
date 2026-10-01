@@ -8,8 +8,7 @@ from unittest.mock import patch
 import botocore.session
 import yaml
 
-from sechubman import Manager
-from sechubman.aws_lambda.rules_backend import build_manager, load_rules
+from sechubman.aws_lambda.rules_backend import load_rules
 from sechubman.boto_utils import BotoStubCall, stub_boto_client
 
 os.environ.setdefault("AWS_DEFAULT_REGION", "eu-west-1")
@@ -21,10 +20,7 @@ os.environ.setdefault("AWS_SESSION_TOKEN", "abc123token")
 
 with Path("tests/fixtures/rules/correct_rules.yaml").open() as file:
     CORRECT_RULES_DOCUMENT = yaml.safe_load(file)
-with Path("tests/fixtures/rules/condensed_rules.yaml").open() as file:
-    CONDENSED_RULES_DOCUMENT = yaml.safe_load(file)
 
-SECURITYHUB_SESSION_CLIENT = botocore.session.get_session().create_client("securityhub")
 S3_SESSION_CLIENT = botocore.session.get_session().create_client("s3")
 
 
@@ -76,34 +72,3 @@ class TestLoadRules(TestCase):
             self.assertRaises(ValueError),
         ):
             load_rules()
-
-
-class TestBuildManager(TestCase):
-    def test_build_manager_without_manager_config(self):
-        manager = build_manager(CORRECT_RULES_DOCUMENT, SECURITYHUB_SESSION_CLIENT)
-        self.assertIsInstance(manager, Manager)
-        registered_rules = manager._rules  # noqa: SLF001
-        self.assertEqual(len(registered_rules), len(CORRECT_RULES_DOCUMENT["Rules"]))
-
-    def test_build_manager_with_manager_config(self):
-        manager = build_manager(CONDENSED_RULES_DOCUMENT, SECURITYHUB_SESSION_CLIENT)
-        self.assertIsInstance(manager, Manager)
-        registered_rules = manager._rules  # noqa: SLF001
-        self.assertEqual(len(registered_rules), len(CONDENSED_RULES_DOCUMENT["Rules"]))
-
-    def test_build_manager_requires_a_rules_key(self):
-        with self.assertRaises(ValueError):
-            build_manager({}, SECURITYHUB_SESSION_CLIENT)
-
-    def test_build_manager_rejects_unknown_manager_config_keys(self):
-        # The common mistake: putting ExtraFeatures next to, rather than inside,
-        # DefaultRuleInput.
-        rules = {
-            "ManagerConfig": {
-                "DefaultRuleInput": {},
-                "ExtraFeatures": {"NoteTextConfig": {"Mode": "jsonUpdate", "Key": "x"}},
-            },
-            "Rules": [],
-        }
-        with self.assertRaises(ValueError):
-            build_manager(rules, SECURITYHUB_SESSION_CLIENT)

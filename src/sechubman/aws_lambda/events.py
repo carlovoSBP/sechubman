@@ -10,9 +10,10 @@ decide whether a finding still needs a Jira ticket after this handler has run.
 
 from typing import Any
 
+from sechubman import Manager
 from sechubman.aws_lambda.clients import get_s3_client, get_securityhub_client
 from sechubman.aws_lambda.logging import get_logger
-from sechubman.aws_lambda.rules_backend import build_manager, load_rules
+from sechubman.aws_lambda.rules_backend import load_rules
 
 LOGGER = get_logger()
 
@@ -39,7 +40,7 @@ def lambda_handler(event: dict[str, Any], _context: object) -> dict[str, str]:
     findings = event.get("detail", {}).get("findings", [])
 
     try:
-        manager = build_manager(
+        manager = Manager.from_rules_document(
             load_rules(s3_client=get_s3_client()), get_securityhub_client()
         )
     except Exception:

@@ -17,4 +17,5 @@ for the deployment contract (triggers, environment variables, IAM permissions).
 
 ::: sechubman.aws_lambda.rules_backend.load_rules
 
-::: sechubman.aws_lambda.rules_backend.build_manager
+See `sechubman.Manager.from_rules_document` (in "Main top-level functionality") for turning the
+loaded document into a ready-to-use `Manager`.

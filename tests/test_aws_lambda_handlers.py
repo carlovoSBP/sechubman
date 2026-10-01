@@ -86,7 +86,7 @@ class TestEventsHandler(TestCase):
         manager = _built_manager(JSON_RULES)
         with (
             patch.object(events, "load_rules", return_value={}),
-            patch.object(events, "build_manager", return_value=manager),
+            patch.object(Manager, "from_rules_document", return_value=manager),
             stub_boto_client(
                 SECURITYHUB_SESSION_CLIENT,
                 [BotoStubCall("batch_update_findings", PROCESSED, JSON_UPDATES)],
@@ -101,7 +101,7 @@ class TestEventsHandler(TestCase):
         manager = _built_manager(JSON_RULES)
         with (
             patch.object(events, "load_rules", return_value={}),
-            patch.object(events, "build_manager", return_value=manager),
+            patch.object(Manager, "from_rules_document", return_value=manager),
         ):
             result = events.lambda_handler(event, FAKE_CONTEXT)
         self.assertEqual(result, {"finding_state": "skipped"})
@@ -117,7 +117,7 @@ class TestEventsHandler(TestCase):
         manager = _built_manager(JSON_RULES)
         with (
             patch.object(events, "load_rules", return_value={}),
-            patch.object(events, "build_manager", return_value=manager),
+            patch.object(Manager, "from_rules_document", return_value=manager),
             stub_boto_client(
                 SECURITYHUB_SESSION_CLIENT,
                 [BotoStubCall("batch_update_findings", UNPROCESSED, JSON_UPDATES)],
@@ -175,7 +175,7 @@ class TestWorkerHandler(TestCase):
         }
         manager = _built_manager(JSON_RULES[:1])
         with (
-            patch.object(worker, "build_manager", return_value=manager),
+            patch.object(Manager, "from_rules_document", return_value=manager),
             stub_boto_client(
                 SECURITYHUB_SESSION_CLIENT,
                 [
@@ -192,7 +192,9 @@ class TestWorkerHandler(TestCase):
         event = {"Records": [{"body": json.dumps({"Rules": []})}]}
         # Exercise an actual failure path (e.g. a malformed rules document) without raising out
         # of the handler.
-        with patch.object(worker, "build_manager", side_effect=ValueError("boom")):
+        with patch.object(
+            Manager, "from_rules_document", side_effect=ValueError("boom")
+        ):
             worker.lambda_handler(event, FAKE_CONTEXT)  # must not raise
 
 
@@ -201,7 +203,7 @@ class TestScheduledHandler(TestCase):
         manager = _built_manager(CORRECT_RULES_DOCUMENT["Rules"])
         with (
             patch.object(scheduled, "load_rules", return_value={}),
-            patch.object(scheduled, "build_manager", return_value=manager),
+            patch.object(Manager, "from_rules_document", return_value=manager),
             stub_boto_client(
                 SECURITYHUB_SESSION_CLIENT,
                 [
@@ -216,7 +218,7 @@ class TestScheduledHandler(TestCase):
         manager = _built_manager(CORRECT_RULES_DOCUMENT["Rules"])
         with (
             patch.object(scheduled, "load_rules", return_value={}),
-            patch.object(scheduled, "build_manager", return_value=manager),
+            patch.object(Manager, "from_rules_document", return_value=manager),
             stub_boto_client(
                 SECURITYHUB_SESSION_CLIENT,
                 [

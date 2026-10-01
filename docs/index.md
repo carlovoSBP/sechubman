@@ -138,8 +138,7 @@ with Path("rules.yaml").open() as file:
 
 client = boto3.client("securityhub")
 
-manager = Manager(**rules["ManagerConfig"], client=client)
-manager.set_rules(rules["Rules"])
+manager = Manager.from_rules_document(rules, client)
 manager.get_and_update_all()
 ```
 

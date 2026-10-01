@@ -12,9 +12,9 @@ Lambda invocation failing outright.
 import json
 from typing import Any
 
+from sechubman import Manager
 from sechubman.aws_lambda.clients import get_securityhub_client
 from sechubman.aws_lambda.logging import get_logger
-from sechubman.aws_lambda.rules_backend import build_manager
 
 LOGGER = get_logger()
 
@@ -34,7 +34,7 @@ def lambda_handler(event: dict[str, Any], _context: object) -> None:
     for record in event.get("Records", []):
         rule = json.loads(record["body"])
         try:
-            manager = build_manager(rule, get_securityhub_client())
+            manager = Manager.from_rules_document(rule, get_securityhub_client())
             manager.get_and_update_all()
         except Exception:
             LOGGER.exception("Failed to process rule. Rule details: %s", rule)
