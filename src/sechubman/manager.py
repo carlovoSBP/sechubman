@@ -1,5 +1,6 @@
 """The domain model that simplifies rule management."""
 
+import copy
 import logging
 from dataclasses import dataclass, field
 from typing import Any
@@ -88,8 +89,16 @@ class Manager:
         default_input: dict[str, Any],
         rule_input: dict[str, Any],
     ) -> dict[str, Any]:
-        """Recursively merge default and rule input dictionaries."""
-        merged: dict[str, Any] = default_input.copy()
+        """Recursively merge default and rule input dictionaries.
+
+        Deep-copies `default_input` so the merged result (and anything nested in it, including
+        branches a given `rule_input` doesn't override) never shares a mutable object with
+        `self.DefaultRuleInput` or with the merge result for any other rule. Without this, a rule
+        that mutates its own merged input in place (e.g. `Rule._apply_quick_note`) would silently
+        corrupt `DefaultRuleInput` itself and leak into every other rule that also didn't override
+        that branch.
+        """
+        merged: dict[str, Any] = copy.deepcopy(default_input)
         for key, value in rule_input.items():
             if (
                 key in merged
@@ -98,7 +107,7 @@ class Manager:
             ):
                 merged[key] = self._merge_inputs(merged[key], value)
             else:
-                merged[key] = value
+                merged[key] = copy.deepcopy(value)
         return merged
 
     def set_rules(self, rules_input: list[dict[str, Any]]) -> list[Rule]:

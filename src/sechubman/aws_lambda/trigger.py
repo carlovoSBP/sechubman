@@ -20,11 +20,11 @@ from sechubman.aws_lambda.rules_backend import load_rules
 LOGGER = get_logger()
 
 
-@LOGGER.inject_lambda_context(log_event=True)
+@LOGGER.inject_lambda_context()
 def lambda_handler(_event: dict[str, Any], _context: object) -> None:
     """Load the configured rules and place each one on SQS for the worker Lambda to apply.
 
-    Reads the destination queue URL from the `SQS_QUEUE_NAME` environment variable.
+    Reads the destination queue URL from the `SQS_QUEUE_URL` environment variable.
 
     Raises
     ------
@@ -34,7 +34,7 @@ def lambda_handler(_event: dict[str, Any], _context: object) -> None:
     try:
         rules = load_rules(s3_client=get_s3_client())
         manager_config = rules.get("ManagerConfig", {})
-        queue_url = os.environ.get("SQS_QUEUE_NAME")
+        queue_url = os.environ.get("SQS_QUEUE_URL")
         sqs = get_sqs_client()
 
         for rule in rules.get("Rules", []):

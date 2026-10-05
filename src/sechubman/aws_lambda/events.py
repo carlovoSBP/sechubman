@@ -18,7 +18,7 @@ from sechubman.aws_lambda.rules_backend import load_rules
 LOGGER = get_logger()
 
 
-@LOGGER.inject_lambda_context(log_event=True)
+@LOGGER.inject_lambda_context()
 def lambda_handler(event: dict[str, Any], _context: object) -> dict[str, str]:
     """Suppress the findings carried by an EventBridge "Security Hub Findings - Imported" event.
 

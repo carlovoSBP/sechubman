@@ -20,7 +20,11 @@ def get_logger() -> Logger:
     """Create a powertools Logger and propagate its configuration to other registered loggers.
 
     The service name is taken from the `POWERTOOLS_SERVICE_NAME` environment variable, as usual
-    for aws-lambda-powertools.
+    for aws-lambda-powertools. Handlers built on this logger call `inject_lambda_context()`
+    without an explicit `log_event` argument, so whether the incoming event is logged (which can
+    include full Security Hub finding payloads) is controlled entirely by the
+    `POWERTOOLS_LOGGER_LOG_EVENT` environment variable (defaults to `false`); passing
+    `log_event=True`/`False` explicitly at the call site would silently override that setting.
 
     Returns
     -------

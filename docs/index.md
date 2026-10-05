@@ -161,8 +161,8 @@ Installing the `lambda` extra (`sechubman[lambda]`, pulling in `aws-lambda-power
   whether the finding still needs further handling, such as a ticket.
 - `sechubman.aws_lambda.trigger.lambda_handler`: intended as the target of an S3 `ObjectCreated`
   notification on the rules file. Loads the rules and places one SQS message per rule (carrying
-  the shared `ManagerConfig` alongside it) on the queue named by the `SQS_QUEUE_NAME` environment
-  variable (its URL, despite the name), for `sechubman.aws_lambda.worker` to apply.
+  the shared `ManagerConfig` alongside it) on the queue URL given by the `SQS_QUEUE_URL`
+  environment variable, for `sechubman.aws_lambda.worker` to apply.
 - `sechubman.aws_lambda.worker.lambda_handler`: intended as the target of an SQS event source
   mapping consuming the queue that `sechubman.aws_lambda.trigger` writes to. Rebuilds a manager
   from the single rule carried by each record and applies it against every currently matching
