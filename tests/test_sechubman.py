@@ -276,6 +276,27 @@ class TestRuleDataclass(TestCase):
         }
         self.assertEqual(processed_ids, all_matched_ids)
 
+    def test_apply_logs_a_distinct_page_number_per_empty_page(self):
+        """Regression test: the "no findings matched" log line must identify which page it's
+        about, so multiple occurrences in one invocation are distinguishable from genuine
+        repeated invocations (e.g. SQS redelivery) without having to cross-reference CloudWatch
+        request IDs.
+        """
+        rule = Rule(**CORRECT_RULES[0], client=SECURITYHUB_SESSION_CLIENT)
+
+        pages = [{"Findings": []}, {"Findings": []}]
+        fake_paginator = MagicMock()
+        fake_paginator.paginate.return_value = iter(pages)
+
+        with (
+            patch.object(rule.client, "get_paginator", return_value=fake_paginator),
+            self.assertLogs("sechubman.rule", level="INFO") as logs,
+        ):
+            self.assertTrue(rule.get_and_update())
+
+        self.assertIn("page 1", logs.output[0])
+        self.assertIn("page 2", logs.output[1])
+
     def test_manager_rule_can_override_note_text_config_mode_to_plaintext(self):
         """Regression test: mirrors docs/index.md's "Condensing big rule sets" example.
 

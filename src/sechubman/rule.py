@@ -285,7 +285,7 @@ class Rule:
 
         any_unprocessed = False
 
-        for page in page_iterator:
+        for page_number, page in enumerate(page_iterator, start=1):
             matched_findings = [
                 finding
                 for finding in page["Findings"]
@@ -294,7 +294,9 @@ class Rule:
 
             if not matched_findings:
                 LOGGER.info(
-                    "No (more) findings matched the filters (in this page); nothing to update."
+                    "No findings matched the filters on page %d; nothing to update "
+                    "on this page.",
+                    page_number,
                 )
                 continue
 
