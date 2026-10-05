@@ -10,6 +10,25 @@ from sechubman.rule import Rule
 
 LOGGER = logging.getLogger(__name__)
 
+ALLOWED_MANAGER_CONFIG_KEYS = {"DefaultRuleInput"}
+
+
+@dataclass(frozen=True)
+class MatchAndUpdateResult:
+    """The outcome of matching and updating a single finding against all configured rules.
+
+    Attributes
+    ----------
+    matched_rules : int
+        The number of rules that matched the finding.
+    all_processed : bool
+        True if there were no unprocessed findings for any of the matched rules'
+        updates, False otherwise. Vacuously True when no rule matched.
+    """
+
+    matched_rules: int
+    all_processed: bool
+
 
 @dataclass
 class Manager:
@@ -18,6 +37,51 @@ class Manager:
     client: BaseClient
     DefaultRuleInput: dict[str, Any] = field(default_factory=dict)
     _rules: list[Rule] = field(default_factory=list)
+
+    @classmethod
+    def from_rules_document(
+        cls, rules: dict[str, Any], client: BaseClient
+    ) -> "Manager":
+        """Build a Manager with its rules registered from a parsed rules document.
+
+        Parameters
+        ----------
+        rules : dict[str, Any]
+            The parsed rules document. Must contain a top-level `Rules` key, and may contain a
+            `ManagerConfig` key with a `DefaultRuleInput` sub-key.
+        client : BaseClient
+            The boto3 Security Hub client to use for the manager and its rules.
+
+        Returns
+        -------
+        Manager
+            A Manager with its rules already registered via `Manager.set_rules`.
+
+        Raises
+        ------
+        ValueError
+            If the rules document has no top-level `Rules` key, or if `ManagerConfig` contains
+            keys other than `DefaultRuleInput` (most commonly caused by putting `ExtraFeatures`
+            next to, rather than inside, `DefaultRuleInput`).
+        """
+        if "Rules" not in rules:
+            msg = "The rules document must contain a top-level 'Rules' key."
+            raise ValueError(msg)
+
+        manager_config = rules.get("ManagerConfig", {})
+        unknown_keys = set(manager_config) - ALLOWED_MANAGER_CONFIG_KEYS
+        if unknown_keys:
+            msg = (
+                f"Unsupported 'ManagerConfig' key(s): {sorted(unknown_keys)}. "
+                f"Allowed keys are: {sorted(ALLOWED_MANAGER_CONFIG_KEYS)}. "
+                "'ExtraFeatures' and other rule fields belong inside 'DefaultRuleInput', "
+                "not next to it."
+            )
+            raise ValueError(msg)
+
+        manager = cls(**manager_config, client=client)
+        manager.set_rules(rules["Rules"])
+        return manager
 
     def _merge_inputs(
         self,
@@ -72,8 +136,11 @@ class Manager:
                 all_success = False
         return all_success
 
-    def match_and_update(self, finding: dict[str, Any]) -> bool:
+    def process_finding(self, finding: dict[str, Any]) -> MatchAndUpdateResult:
         """Match one finding against all configured rules and apply updates for each match.
+
+        Unlike `match_and_update`, this also reports how many rules matched, so callers can
+        distinguish "nothing matched" from "everything matched and was processed successfully".
 
         Parameters
         ----------
@@ -82,8 +149,8 @@ class Manager:
 
         Returns
         -------
-        bool
-            True if all matching updates were processed, False otherwise.
+        MatchAndUpdateResult
+            The number of rules that matched and whether all matching updates were processed.
         """
         any_unprocessed = False
         matched_rules = 0
@@ -100,4 +167,21 @@ class Manager:
         if matched_rules == 0:
             LOGGER.info("Finding did not match any rules; nothing to update.")
 
-        return not any_unprocessed
+        return MatchAndUpdateResult(
+            matched_rules=matched_rules, all_processed=not any_unprocessed
+        )
+
+    def match_and_update(self, finding: dict[str, Any]) -> bool:
+        """Match one finding against all configured rules and apply updates for each match.
+
+        Parameters
+        ----------
+        finding : dict[str, Any]
+            The finding to match and update.
+
+        Returns
+        -------
+        bool
+            True if all matching updates were processed, False otherwise.
+        """
+        return self.process_finding(finding).all_processed

@@ -3,7 +3,7 @@ import json
 import os
 from pathlib import Path
 from unittest import TestCase
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 import botocore.session
 import yaml
@@ -231,6 +231,103 @@ class TestRuleDataclass(TestCase):
         ):
             self.assertTrue(rule.get_and_update())
 
+    def test_apply_paginates_beyond_first_page(self):
+        """Regression test: get_and_update must not cap pagination to a single page.
+
+        A real "total findings > 100" scenario doesn't fit in a fixture-driven Stubber test, so
+        this asserts directly on the paginator call: no 'MaxItems' cap is passed (only
+        'PageSize'), and every page yielded by the paginator is processed, by faking the
+        paginator itself rather than relying on find volume.
+        """
+        rule = Rule(**CORRECT_RULES[0], client=SECURITYHUB_SESSION_CLIENT)
+
+        all_matched_ids = {
+            identifier["Id"] for identifier in UPDATES["FindingIdentifiers"]
+        }
+        all_findings = FINDINGS["Findings"]
+        pages = [
+            {"Findings": all_findings[:12]},
+            {"Findings": all_findings[12:]},
+        ]
+
+        fake_paginator = MagicMock()
+        fake_paginator.paginate.return_value = iter(pages)
+
+        with (
+            patch.object(
+                rule.client, "get_paginator", return_value=fake_paginator
+            ) as get_paginator,
+            patch.object(
+                rule.client, "batch_update_findings", return_value=PROCESSED
+            ) as batch_update_findings,
+        ):
+            self.assertTrue(rule.get_and_update())
+
+        get_paginator.assert_called_once_with("get_findings")
+        _, pagination_kwargs = fake_paginator.paginate.call_args
+        self.assertNotIn("MaxItems", pagination_kwargs["PaginationConfig"])
+
+        # Both pages must have produced their own batch_update_findings call.
+        self.assertEqual(batch_update_findings.call_count, 2)
+        processed_ids = {
+            identifier["Id"]
+            for call in batch_update_findings.call_args_list
+            for identifier in call.kwargs["FindingIdentifiers"]
+        }
+        self.assertEqual(processed_ids, all_matched_ids)
+
+    def test_apply_logs_a_distinct_page_number_per_empty_page(self):
+        """Regression test: the "no findings matched" log line must identify which page it's
+        about, so multiple occurrences in one invocation are distinguishable from genuine
+        repeated invocations (e.g. SQS redelivery) without having to cross-reference CloudWatch
+        request IDs.
+        """
+        rule = Rule(**CORRECT_RULES[0], client=SECURITYHUB_SESSION_CLIENT)
+
+        pages = [{"Findings": []}, {"Findings": []}]
+        fake_paginator = MagicMock()
+        fake_paginator.paginate.return_value = iter(pages)
+
+        with (
+            patch.object(rule.client, "get_paginator", return_value=fake_paginator),
+            self.assertLogs("sechubman.rule", level="INFO") as logs,
+        ):
+            self.assertTrue(rule.get_and_update())
+
+        self.assertIn("page 1", logs.output[0])
+        self.assertIn("page 2", logs.output[1])
+
+    def test_manager_rule_can_override_note_text_config_mode_to_plaintext(self):
+        """Regression test: mirrors docs/index.md's "Condensing big rule sets" example.
+
+        A manager default of NoteTextConfig(Mode="jsonUpdate", Key=...) merged with a rule that
+        only overrides Mode back to "plaintext" used to raise ValueError at Rule construction,
+        because the merged Key survived from the default.
+        """
+        manager = Manager(
+            client=SECURITYHUB_SESSION_CLIENT,
+            DefaultRuleInput={
+                "Filters": {},
+                "UpdatesToFilteredFindings": {"Note": {"UpdatedBy": "sechubman"}},
+                "ExtraFeatures": {
+                    "NoteTextConfig": {"Mode": "jsonUpdate", "Key": "suppressionReason"}
+                },
+            },
+        )
+        rules = manager.set_rules(
+            [
+                {
+                    "Filters": {},
+                    "ExtraFeatures": {
+                        "NoteTextConfig": {"Mode": "plaintext"},
+                        "QuickNote": "Test-2",
+                    },
+                }
+            ]
+        )
+        self.assertEqual(rules[0]._note_text_config.Mode, "plaintext")  # noqa: SLF001
+        self.assertEqual(rules[0]._note_text_config.Key, "")  # noqa: SLF001
+
     def test_manager_apply(self):
         manager = Manager(
             **CONDENSED_RULES["ManagerConfig"], client=SECURITYHUB_SESSION_CLIENT
@@ -296,6 +393,42 @@ class TestRuleDataclass(TestCase):
             ],
         ):
             self.assertTrue(manager.match_and_update(FINDING_GROOMED))
+
+    def test_process_finding_reports_matched_rule_count(self):
+        manager = Manager(client=SECURITYHUB_SESSION_CLIENT)
+        manager.set_rules(JSON_RULES)
+        with stub_boto_client(
+            SECURITYHUB_SESSION_CLIENT,
+            [
+                BotoStubCall("batch_update_findings", PROCESSED, JSON_UPDATES),
+            ],
+        ):
+            result = manager.process_finding(FINDING_GROOMED)
+        self.assertEqual(result.matched_rules, 1)
+        self.assertTrue(result.all_processed)
+
+    def test_process_finding_reports_no_matched_rules(self):
+        manager = Manager(client=SECURITYHUB_SESSION_CLIENT)
+        manager.set_rules(JSON_RULES)
+        non_matching_finding = {**FINDING_GROOMED, "Resources": []}
+
+        result = manager.process_finding(non_matching_finding)
+
+        self.assertEqual(result.matched_rules, 0)
+        self.assertTrue(result.all_processed)
+
+    def test_process_finding_reports_unprocessed_updates(self):
+        manager = Manager(client=SECURITYHUB_SESSION_CLIENT)
+        manager.set_rules(JSON_RULES)
+        with stub_boto_client(
+            SECURITYHUB_SESSION_CLIENT,
+            [
+                BotoStubCall("batch_update_findings", UNPROCESSED, JSON_UPDATES),
+            ],
+        ):
+            result = manager.process_finding(FINDING_GROOMED)
+        self.assertEqual(result.matched_rules, 1)
+        self.assertFalse(result.all_processed)
 
     def test_match(self):
         for all_filter_type_match_rule in ALL_FILTER_TYPES_MATCH_RULES:
