@@ -1,5 +1,34 @@
 # Changelog
 
+## [2.0.0](https://github.com/carlovoSBP/sechubman/compare/v1.1.1...v2.0.0) (2026-10-05)
+
+
+### ⚠ BREAKING CHANGES
+
+* sechubman.aws_lambda_handler.lambda_handler no longer exists. This was the real Lambda handler shipped in sechubman 1.1.0-1.1.1 (not a shim at the time); a Lambda still configured with that exact handler path must be updated to sechubman.aws_lambda.scheduled.lambda_handler, which has identical behaviour.
+
+### Features
+
+* add events, trigger and worker Lambda handlers ([5e335d3](https://github.com/carlovoSBP/sechubman/commit/5e335d3cf7e9aaf171a9dbfe115e2e868d2e7095))
+* load rules from S3 or a local file for Lambda use ([f1ea37a](https://github.com/carlovoSBP/sechubman/commit/f1ea37a267450b7deb3c7d68546db9ad4d0c7a62))
+* remove the aws_lambda_handler backwards-compatibility shim ([64af7cb](https://github.com/carlovoSBP/sechubman/commit/64af7cb8b4d10e3a32eda8889c39f3e015868345))
+* report match count from Manager.match_and_update ([bf2cd56](https://github.com/carlovoSBP/sechubman/commit/bf2cd56cdce3222959ef8947c63f7e1c611b0f65))
+
+
+### Bug Fixes
+
+* guard the pyyaml import behind a clear error message ([4a444a7](https://github.com/carlovoSBP/sechubman/commit/4a444a7f470356c425cb7f25f41da0ca6126cc3b))
+* include the page number in the "no findings matched" log line ([a335482](https://github.com/carlovoSBP/sechubman/commit/a335482c64c4a60b69a5151baf0f7538a685f095))
+* let a rule switch NoteTextConfig back to plaintext under a jsonUpdate default ([da1962e](https://github.com/carlovoSBP/sechubman/commit/da1962e23bcb1764a9341847173ed09de8ff81a1))
+* move pyyaml to correct dependency group ([b32f9e2](https://github.com/carlovoSBP/sechubman/commit/b32f9e252bcd0bf15be346ceff3581f096ddaba5))
+* paginate through all findings in Rule.get_and_update ([a772266](https://github.com/carlovoSBP/sechubman/commit/a7722661e74045d95946be410704d7366ae39aa6))
+
+
+### Documentation
+
+* document Lambda deployment and migration from awsfindingsmanagerlib ([d810490](https://github.com/carlovoSBP/sechubman/commit/d8104908979431077689c67fa31251c98e76e9bb))
+* fix ExtraFeatures placement in the ManagerConfig example ([b97b00a](https://github.com/carlovoSBP/sechubman/commit/b97b00ad52f2ceb350068fab46317cae58a55a10))
+
 ## [1.1.1](https://github.com/carlovoSBP/sechubman/compare/v1.1.0...v1.1.1) (2026-04-24)
 
 
