@@ -167,7 +167,10 @@ class TestWorkerHandler(TestCase):
     def test_applies_the_rule_carried_by_each_record(self):
         event = {
             "Records": [
-                {"body": json.dumps({"ManagerConfig": {}, "Rules": [JSON_RULES[0]]})}
+                {
+                    "messageId": "msg-1",
+                    "body": json.dumps({"ManagerConfig": {}, "Rules": [JSON_RULES[0]]}),
+                }
             ]
         }
         manager = _built_manager(JSON_RULES[:1])
@@ -183,16 +186,41 @@ class TestWorkerHandler(TestCase):
                 ],
             ),
         ):
-            worker.lambda_handler(event, FAKE_CONTEXT)
+            result = worker.lambda_handler(event, FAKE_CONTEXT)
+        self.assertEqual(result, {"batchItemFailures": []})
 
-    def test_does_not_raise_when_a_record_fails(self):
-        event = {"Records": [{"body": json.dumps({"Rules": []})}]}
-        # Exercise an actual failure path (e.g. a malformed rules document) without raising out
-        # of the handler.
-        with patch.object(
-            Manager, "from_rules_document", side_effect=ValueError("boom")
+    def test_reports_only_the_failed_record_as_a_batch_item_failure(self):
+        # A batch of two records: the first fails, the second must still be processed and must
+        # not be reported as failed (only the failed record's batchItemFailures entry should
+        # cause it, specifically, to be retried/redriven).
+        event = {
+            "Records": [
+                {"messageId": "msg-bad", "body": json.dumps({"Rules": []})},
+                {
+                    "messageId": "msg-good",
+                    "body": json.dumps({"ManagerConfig": {}, "Rules": [JSON_RULES[0]]}),
+                },
+            ]
+        }
+        good_manager = _built_manager(JSON_RULES[:1])
+        with (
+            patch.object(
+                Manager,
+                "from_rules_document",
+                side_effect=[ValueError("boom"), good_manager],
+            ),
+            stub_boto_client(
+                SECURITYHUB_SESSION_CLIENT,
+                [
+                    BotoStubCall(
+                        "get_findings", {"Findings": [FINDING_GROOMED]}, FILTERS
+                    ),
+                    BotoStubCall("batch_update_findings", PROCESSED, JSON_UPDATES),
+                ],
+            ),
         ):
-            worker.lambda_handler(event, FAKE_CONTEXT)  # must not raise
+            result = worker.lambda_handler(event, FAKE_CONTEXT)  # must not raise
+        self.assertEqual(result, {"batchItemFailures": [{"itemIdentifier": "msg-bad"}]})
 
 
 class TestScheduledHandler(TestCase):
