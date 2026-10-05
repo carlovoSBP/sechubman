@@ -143,7 +143,7 @@ class TestTriggerHandler(TestCase):
         ]
         with (
             patch.dict(
-                "os.environ", {"SQS_QUEUE_NAME": "https://sqs.example/q"}, clear=False
+                "os.environ", {"SQS_QUEUE_URL": "https://sqs.example/q"}, clear=False
             ),
             patch.object(
                 trigger,
