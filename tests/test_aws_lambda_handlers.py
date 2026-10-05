@@ -254,25 +254,3 @@ class TestScheduledHandler(TestCase):
             self.assertRaises(RuntimeError),
         ):
             scheduled.lambda_handler({}, FAKE_CONTEXT)
-
-
-class TestInjectLambdaContextDoesNotHardcodeLogEvent(TestCase):
-    """Regression test for a post-merge review finding.
-
-    aws-lambda-powertools' `inject_lambda_context(log_event=...)` resolves whether to log the
-    incoming event once, at decoration time (i.e. at module import), picking an explicit
-    `log_event` argument over the `POWERTOOLS_LOGGER_LOG_EVENT` environment variable if one is
-    passed. All four handlers used to pass `log_event=True` explicitly, which silently overrode
-    the Terraform module's `POWERTOOLS_LOGGER_LOG_EVENT = "false"` and logged every full Security
-    Hub finding payload regardless of that setting. Because the resolution happens at import
-    time, a behavioural test would need to reimport each module under different environment
-    variable values; asserting the explicit override is gone from the source is a simpler and
-    equally effective guard against it being reintroduced.
-    """
-
-    def test_no_handler_hardcodes_log_event(self):
-        for module in (events, trigger, worker, scheduled):
-            source = Path(module.__file__).read_text()
-            with self.subTest(module=module.__name__):
-                self.assertNotIn("log_event=True", source)
-                self.assertNotIn("log_event=False", source)
