@@ -55,3 +55,46 @@ class TestFromRulesDocument(TestCase):
         }
         with self.assertRaises(ValueError):
             Manager.from_rules_document(rules, SECURITYHUB_SESSION_CLIENT)
+
+
+class TestSetRulesDoesNotShareMutableState(TestCase):
+    """Regression test for a data-corruption bug found in post-merge review.
+
+    `Manager._merge_inputs` used a shallow `dict.copy()`, so a rule that didn't override a given
+    branch of `DefaultRuleInput` (e.g. `UpdatesToFilteredFindings`) shared that nested dict, by
+    object identity, with `Manager.DefaultRuleInput` itself and with every other such rule.
+    `Rule._apply_quick_note` then mutated `UpdatesToFilteredFindings["Note"]["Text"]` in place,
+    so the *last* rule's `QuickNote` silently overwrote every earlier rule's note, and
+    permanently corrupted `Manager.DefaultRuleInput` too. This is exactly the configuration
+    pattern documented for condensing big rule sets (a shared `DefaultRuleInput.
+    UpdatesToFilteredFindings.Note` with per-rule `QuickNote` overrides), so it was reachable by
+    real usage, not just a theoretical edge case.
+    """
+
+    def test_quick_note_does_not_leak_between_rules_sharing_a_default(self):
+        manager = Manager(
+            client=SECURITYHUB_SESSION_CLIENT,
+            DefaultRuleInput={
+                "Filters": {},
+                "UpdatesToFilteredFindings": {
+                    "Note": {"Text": "placeholder", "UpdatedBy": "sechubman"}
+                },
+            },
+        )
+
+        rules = manager.set_rules(
+            [
+                {"Filters": {}, "ExtraFeatures": {"QuickNote": "note A"}},
+                {"Filters": {}, "ExtraFeatures": {"QuickNote": "note B"}},
+            ]
+        )
+
+        self.assertEqual(rules[0].UpdatesToFilteredFindings["Note"]["Text"], "note A")
+        self.assertEqual(rules[1].UpdatesToFilteredFindings["Note"]["Text"], "note B")
+        self.assertEqual(
+            manager.DefaultRuleInput["UpdatesToFilteredFindings"]["Note"]["Text"],
+            "placeholder",
+        )
+        self.assertIsNot(
+            rules[0].UpdatesToFilteredFindings, rules[1].UpdatesToFilteredFindings
+        )
