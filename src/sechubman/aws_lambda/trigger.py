@@ -20,7 +20,7 @@ from sechubman.aws_lambda.rules_backend import load_rules
 LOGGER = get_logger()
 
 
-@LOGGER.inject_lambda_context(log_event=True)
+@LOGGER.inject_lambda_context()
 def lambda_handler(_event: dict[str, Any], _context: object) -> None:
     """Load the configured rules and place each one on SQS for the worker Lambda to apply.
 

@@ -23,7 +23,7 @@ from sechubman.aws_lambda.logging import get_logger
 LOGGER = get_logger()
 
 
-@LOGGER.inject_lambda_context(log_event=True)
+@LOGGER.inject_lambda_context()
 def lambda_handler(
     event: dict[str, Any], _context: object
 ) -> dict[str, list[dict[str, str]]]:
